@@ -3,6 +3,7 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.UnsupportedEncodingException;
+import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.net.SocketTimeoutException;
 import java.net.UnknownHostException;
@@ -24,15 +25,16 @@ public class Downloader implements Runnable {
 	int linksSizeCounter = 0;
 	int numOfImgs = 0;
 	int imgSizeCounter = 0;
-	
-	private static String[] supportedVideoFormat = {"mov", "flv", "swf", "mkv", "avi", "mpg", "mp4", "wmv"};
+
+	private static String[] supportedVideoFormat = { "mov", "flv", "swf",
+			"mkv", "avi", "mpg", "mp4", "wmv" };
 	private static String[] supportedImageFormat = { "jpg", "png", "bmp", "gif" };
-	private static String[] supportedDocFormat = {"pdf", "doc", "docx", "xls", "xlsx", "ppt", "pptx"};
+	private static String[] supportedDocFormat = { "pdf", "doc", "docx", "xls",
+			"xlsx", "ppt", "pptx" };
 
 	public Downloader(SynchronizedQueue<String> url,
 			SynchronizedQueue<AnalyzerQueueObject> analyzerQueue,
 			HashMap<String, Statistics> domainMap, class1 c1object) {
-
 
 		this.domainMap = domainMap;
 		this.URLtoDownload = url;
@@ -47,20 +49,20 @@ public class Downloader implements Runnable {
 		String currURL;
 
 		while ((currURL = URLtoDownload.dequeue()) != null) {
-			System.out.println("before increment Downloader");
+			System.out.println(Thread.currentThread().getName() + " " + "before increment Downloader");
 			c1object.increment();
 			// get page
 			// TODO: insert result to HTML queue
-			System.out.println(Msgs.printMsg(Msgs.DOWNLOADER_INFO, currURL));
+			System.out.println(Thread.currentThread().getName() + " " + Msgs.printMsg(Msgs.DOWNLOADER_INFO, currURL));
 			String result;
 
 			try {
 				result = java.net.URLDecoder.decode(currURL, "UTF-8");
-				System.out.println("URL afetr decode is: " + result);
-//				if(result.startsWith("https")){
-//					System.out.println("HTTPS is unsupported.");
-//					continue;
-//				}
+				System.out.println(Thread.currentThread().getName() + " " + "URL afetr decode is: " + result);
+				// if(result.startsWith("https")){
+				// System.out.println("HTTPS is unsupported.");
+				// continue;
+				// }
 				if (result.startsWith("http://")) {
 					result = result.substring(7);
 				}
@@ -74,78 +76,78 @@ public class Downloader implements Runnable {
 						relativePath = relativePath + "/" + levels[i];
 					}
 				}
-				System.out.println("Domain Host is: " + domainHost);
-				System.out.println("Relative path is: " + relativePath);
-				// if(isHtml(relativePath)){
-				// generate GET request
-				// }
-				// else{
-				// if(isImg(relativePath) || isVideo(relativePath))
-				// TODO: create HEAD request
-				// }
-				this.currentRequest = new HttpGetRequest(domainHost);
-				String reqAsString = HttpGetRequest.generateGetRequestAsString(
-						currentRequest, relativePath);
-				System.out.println("----This is Get Request----");
-				System.out.println(reqAsString);
+				System.out.println(Thread.currentThread().getName() + " " + "Domain Host is: " + domainHost);
+				System.out.println(Thread.currentThread().getName() + " " + "Relative path is: " + relativePath);
+				if (isImage(relativePath) || isVideo(relativePath)
+						|| isDoc(relativePath)) {
+					System.out.println(Thread.currentThread().getName() + " " + "media file");
+				}
+				else {
+					this.currentRequest = new HttpGetRequest(domainHost);
+					String reqAsString = HttpGetRequest
+							.generateGetRequestAsString(currentRequest,
+									relativePath);
+					System.out.println(Thread.currentThread().getName() + " " + "----This is Get Request----");
+					System.out.println(Thread.currentThread().getName() + " " + reqAsString);
 
-				socket = new Socket(levels[0], 80);
-
-				this.outputStream = new DataOutputStream(
-						socket.getOutputStream());
-				System.out.println("Downloader Port is " + socket.getPort());
-				outputStream.write(reqAsString.getBytes());
-
-				BufferedReader rd = new BufferedReader(new InputStreamReader(
-						socket.getInputStream()));
-				String line;
-				String urlSrcToAnalyze = "";
-				System.out.println("before read response");
-				try {
-					socket.setSoTimeout(5000);
-					while ((line = rd.readLine()) != null) {
-						System.out.println(line);
-						urlSrcToAnalyze += line;
+					socket = new Socket();
+					socket.connect(new InetSocketAddress(domainHost, 80), 1000);
+					while (socket.isConnected() == false) {
+						//TODO: enter timeout to make sure it quits sometime...
 					}
-					socket.close();
-				} catch (SocketTimeoutException e) {
-					System.err.println("Socket time out! (Expected:)");
-				}
-				catch (Exception e){
-					System.err.println("failed to download " + result);
-				}
-				System.out.println(new Date() + "Enqueue Analyzer");
-				HTMLtoAnalyze.enqueue(new AnalyzerQueueObject(result,
-						domainHost, urlSrcToAnalyze, new Date()));
-				System.out.println("befor decrement Downloader");
-				c1object.decrement();
 
+					this.outputStream = new DataOutputStream(socket.getOutputStream());
+					System.out.println(Thread.currentThread().getName() + " " + "Downloader Port is " + socket.getPort());
+					outputStream.write(reqAsString.getBytes());
 
-			} catch (UnsupportedEncodingException e2) {
-				// TODO Auto-generated catch block
-				e2.printStackTrace();
-			} catch (UnknownHostException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			} catch (IOException e) {
-				// TODO Auto-generated catch block
+					BufferedReader rd = new BufferedReader(new InputStreamReader(
+							socket.getInputStream()));
+					String line;
+					String urlSrcToAnalyze = "";
+					System.out.println(Thread.currentThread().getName() + " " + "before read response");
+					try {
+						socket.setSoTimeout(5000);
+						while ((line = rd.readLine()) != null) {
+							System.out.println(line);
+							urlSrcToAnalyze += line;
+						}
+						socket.close();
+						System.out.println(Thread.currentThread().getName() + " " + new Date() + " Enqueue Analyzer1");
+						HTMLtoAnalyze.enqueue(new AnalyzerQueueObject(result,
+								domainHost, urlSrcToAnalyze, new Date()));
+					} catch (SocketTimeoutException e) {
+						System.out.println(Thread.currentThread().getName() + " " + "Socket time out! (Expected:)");
+						System.out.println(Thread.currentThread().getName() + " " + new Date() + " Enqueue Analyzer2");
+						HTMLtoAnalyze.enqueue(new AnalyzerQueueObject(result,
+								domainHost, urlSrcToAnalyze, new Date()));
+					} catch (Exception e) {
+						System.out.println(Thread.currentThread().getName() + " " + "failed to download " + result);
+						e.printStackTrace();
+					}
+					
+				
+				} 
+
+			} catch(Exception e){
+				System.out.println(Thread.currentThread().getName() + " Exception!!!");
 				e.printStackTrace();
 			}
+			System.out.println(Thread.currentThread().getName() + " " + "decrement downloader");
+			c1object.decrement();
 		}
 	}
-	
+
 	/***
-	 * Check if requested URI is an HTML file.
+	 * Check if requested URI is an HTML file. TODO REMOVE
 	 */
 	public boolean isHtml(String path) {
 		if (path == null) {
 			return false;
 		}
-
-		return path.equalsIgnoreCase("html")
-				|| path.equalsIgnoreCase("htm");
+		
+		return path.equalsIgnoreCase("html") || path.equalsIgnoreCase("htm") || path.equals("");
 	}
-	
+
 	/***
 	 * Checks if requested URI is an image
 	 */
@@ -155,13 +157,13 @@ public class Downloader implements Runnable {
 			return false;
 		} else {
 			for (int i = 0; i < supportedImageFormat.length; i++) {
-				isValidImgFormat = isValidImgFormat
-						|| path
-								.equalsIgnoreCase(supportedImageFormat[i]);
+				if(path.endsWith(supportedImageFormat[i]))
+				isValidImgFormat = true;
 			}
 			return isValidImgFormat;
 		}
 	}
+
 	/***
 	 * Checks if requested URI is a video
 	 */
@@ -171,30 +173,29 @@ public class Downloader implements Runnable {
 			return false;
 		} else {
 			for (int i = 0; i < supportedVideoFormat.length; i++) {
-				isValidVideoFormat = isValidVideoFormat
-						|| path
-								.equalsIgnoreCase(supportedVideoFormat[i]);
+				if(path.endsWith(supportedVideoFormat[i]))
+					isValidVideoFormat = true;
 			}
 			return isValidVideoFormat;
 		}
 	}
+
 	/***
 	 * Checks if requested URI is a document
 	 */
-	public boolean isDoc(String path){
+	public boolean isDoc(String path) {
 		boolean isValidDocFormat = false;
 		if (path == null) {
 			return false;
 		} else {
 			for (int i = 0; i < supportedDocFormat.length; i++) {
-				isValidDocFormat = isValidDocFormat
-						|| path
-								.equalsIgnoreCase(supportedDocFormat[i]);
+				if(path.endsWith(supportedDocFormat[i]))
+					isValidDocFormat = true;
 			}
 			return isValidDocFormat;
 		}
 	}
-	
+
 	public static class HttpGetRequest {
 		public String requestHeaders;
 		public HashMap<String, String> headerParams;
@@ -211,9 +212,9 @@ public class Downloader implements Runnable {
 		public static String generateGetRequestAsString(HttpGetRequest req,
 				String path) {
 			String res;
-			if (path.equals(""))
+			if (path.equals("")){
 				res = methodType + " " + "/" + " " + httpVersion + CRLF;
-			else
+			}else
 				res = methodType + " " + path + " " + httpVersion + CRLF;
 			res = res + "Host: " + req.domainHost + " " + CRLF;
 			res = res + CRLF;

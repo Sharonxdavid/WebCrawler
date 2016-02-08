@@ -37,16 +37,16 @@ public class ExecResListener implements Runnable {
 				break;
 			} else {
 				try {
-//					Thread.sleep(9000);
 					Thread.sleep(20000);
 				} catch (InterruptedException e) {
 					// TODO Auto-generated catch block
 					e.printStackTrace();
 				}
+				
+				
 			}
 		}
 		try {
-
 			System.out.println("---Inside ExecResListener---");
 			System.out.println("---Inside ExecResListener---");
 			System.out.println("---Inside ExecResListener---");

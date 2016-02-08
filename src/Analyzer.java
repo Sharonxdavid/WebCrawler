@@ -42,16 +42,16 @@ public class Analyzer implements Runnable {
 		String currPageBody;
 
 		while ((currData = HTMLtoAnalyze.dequeue()) != null) {
-			System.out.println("Before increment Analyzer");
+			System.out.println(Thread.currentThread().getName() + " " + "Before increment Analyzer");
 			c1object.increment();
 			// analyze currPage
 			// insert new url to url queue
-			System.out.println("Analyzer Object Params:");
-			System.out.println("1" + currData.url);
-			System.out.println("2" + currData.host);
-			System.out.println("3" + currData.htmlBody);
-			System.out.println("4" + currData.downloadDate);
-			System.out.println("5 Domain and Date " + currData.toString());
+			System.out.println(Thread.currentThread().getName() + " " + "Analyzer Object Params:");
+			System.out.println(Thread.currentThread().getName() + " " + "1" + currData.url);
+			System.out.println(Thread.currentThread().getName() + " " + "2" + currData.host);
+			System.out.println(Thread.currentThread().getName() + " " + "3" + currData.htmlBody);
+			System.out.println(Thread.currentThread().getName() + " " + "4" + currData.downloadDate);
+			System.out.println(Thread.currentThread().getName() + " " + "5 Domain and Date " + currData.toString());
 			
 //			if(!domainMap.containsKey(currData.host)){
 //				domainMap.put(currData.host, new Statistics());
@@ -60,7 +60,7 @@ public class Analyzer implements Runnable {
 			
 			currPageBody = currData.htmlBody;
 			crawlHref(currPageBody, currData.host);
-			System.out.println("# of urls " + urlCounter);
+			System.out.println(Thread.currentThread().getName() + " " + "# of urls " + urlCounter);
 			domainMap.get(currData.host).addToKey("# of urls", String.valueOf(urlCounter));
 //			params.put("# of imgs", Integer.toString(imgCounter));
 //			try {
@@ -71,7 +71,7 @@ public class Analyzer implements Runnable {
 //			}
 			domainMap.get(currData.host).addToKey("# of imgs", String.valueOf(imgCounter));
 //			params.put("# of imgs", Integer.toString(imgCounter));
-			System.out.println("# of imgs " + imgCounter);
+			System.out.println(Thread.currentThread().getName() + " " + "# of imgs " + imgCounter);
 //			if(!(currData.url.equals(currData.host)))
 //				try {
 //					createPageStats(params, currData.toString());
@@ -79,7 +79,7 @@ public class Analyzer implements Runnable {
 //					// TODO Auto-generated catch block
 //					e.printStackTrace();
 //				}
-			System.out.println("before decrement analyzer");
+			System.out.println(Thread.currentThread().getName() + " " + "before decrement analyzer");
 			c1object.decrement();
 		}
 	}

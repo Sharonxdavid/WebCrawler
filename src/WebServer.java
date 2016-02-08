@@ -41,16 +41,13 @@ public class WebServer {
 		//for loop i < 10 t[i] = new thread
 		Thread[] downloaderThreadArray = new Thread[10];
 		Thread[] analyzerThreadArray = new Thread[2];
-		for (int i = 0; i < 10; i++) {
-			downloaderThreadArray[i] = new Thread(downloader);
-		}
-		for (int i = 0; i < analyzerThreadArray.length; i++) {
-			analyzerThreadArray[i] = new Thread(analyzer);
-		}
+		
 		for (int i = 0; i < downloaderThreadArray.length; i++) {
+			downloaderThreadArray[i] = new Thread(downloader);
 			downloaderThreadArray[i].start();
 		}
 		for (int i = 0; i < analyzerThreadArray.length; i++) {
+			analyzerThreadArray[i] = new Thread(analyzer);
 			analyzerThreadArray[i].start();
 		}		
 	}
