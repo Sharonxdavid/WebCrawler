@@ -31,12 +31,13 @@ public class WebServer {
 	HashMap<String, Statistics> domainMap;
 	
 	public WebServer(){
-		c1object = new class1();
-		this.downloaderQueue = new SynchronizedQueue<>(10000, c1object);
-		this.analyzerQueue = new SynchronizedQueue<>(10000, c1object);
+		this.c1object = new class1();
+//		this.downloaderQueue = new SynchronizedQueue<>(10000, c1object);
+		this.downloaderQueue = new SynchronizedQueue<>(10000);
+		this.analyzerQueue = new SynchronizedQueue<>(10000);
 		domainMap = new HashMap<>();
-		downloader = new Downloader(downloaderQueue, analyzerQueue, domainMap);
-		analyzer = new Analyzer(downloaderQueue, analyzerQueue, domainMap);
+		downloader = new Downloader(downloaderQueue, analyzerQueue, domainMap, c1object);
+		analyzer = new Analyzer(downloaderQueue, analyzerQueue, domainMap, c1object);
 		//for loop i < 10 t[i] = new thread
 		Thread[] downloaderThreadArray = new Thread[10];
 		Thread[] analyzerThreadArray = new Thread[2];

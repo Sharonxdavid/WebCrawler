@@ -14,25 +14,26 @@ import java.util.Map.Entry;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+
 public class Analyzer implements Runnable {
 
 	private SynchronizedQueue<String> URLtoDownload;
 	private SynchronizedQueue<AnalyzerQueueObject> HTMLtoAnalyze;
 	int imgCounter = 0;
 	int urlCounter = 0;
-	HashMap<String, String> params = new HashMap<String, String>();
+//	HashMap<String, String> params = new HashMap<String, String>();
 	HashMap<String, Statistics> domainMap;
-//	class1 c1object;
+	class1 c1object;
 	
 
 	public Analyzer(SynchronizedQueue<String> url,
-			SynchronizedQueue<AnalyzerQueueObject> data, HashMap<String, Statistics> domainMap) {
-		System.out.println("Analyzer cons");
+			SynchronizedQueue<AnalyzerQueueObject> data, HashMap<String, Statistics> domainMap, class1 c1object) {
+
 		this.HTMLtoAnalyze = data;
 		this.URLtoDownload = url;
 		this.domainMap = domainMap;
-		URLtoDownload.registerProducer();
-//		this.c1object = c1object;
+		this.c1object = c1object;
+		this.URLtoDownload.registerProducer();
 	}
 
 	@Override
@@ -41,7 +42,8 @@ public class Analyzer implements Runnable {
 		String currPageBody;
 
 		while ((currData = HTMLtoAnalyze.dequeue()) != null) {
-//			c1object.increment();
+			System.out.println("Before increment Analyzer");
+			c1object.increment();
 			// analyze currPage
 			// insert new url to url queue
 			System.out.println("Analyzer Object Params:");
@@ -61,12 +63,12 @@ public class Analyzer implements Runnable {
 			System.out.println("# of urls " + urlCounter);
 			domainMap.get(currData.host).addToKey("# of urls", String.valueOf(urlCounter));
 //			params.put("# of imgs", Integer.toString(imgCounter));
-			try {
-				crawlImgs(currPageBody, currData.host);
-			} catch (IOException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
+//			try {
+//				crawlImgs(currPageBody, currData.host);
+//			} catch (IOException e) {
+//				// TODO Auto-generated catch block
+//				e.printStackTrace();
+//			}
 			domainMap.get(currData.host).addToKey("# of imgs", String.valueOf(imgCounter));
 //			params.put("# of imgs", Integer.toString(imgCounter));
 			System.out.println("# of imgs " + imgCounter);
@@ -77,10 +79,9 @@ public class Analyzer implements Runnable {
 //					// TODO Auto-generated catch block
 //					e.printStackTrace();
 //				}
-
+			System.out.println("before decrement analyzer");
+			c1object.decrement();
 		}
-		URLtoDownload.unregisterProducer();
-
 	}
 
 	private void createPageStats(HashMap<String, String> params, String domain)
@@ -177,7 +178,6 @@ public class Analyzer implements Runnable {
 			}
 			System.out.println("NEXT URL IS " + nextUrl);
 			URLtoDownload.enqueue(nextUrl);
-//			c1object.decrement();
 		}
 	}
 
@@ -190,7 +190,7 @@ public class Analyzer implements Runnable {
 		while (m.find()) {
 			System.out.println(m.group(0));
 			HttpHeadRequest getImgSize = new HttpHeadRequest(host);
-			String reqAsString = HttpHeadRequest.generateGetRequestAsString(
+			String reqAsString = HttpHeadRequest.generateHeadRequestAsString(
 					getImgSize,
 					m.group(0).substring(10, m.group(0).indexOf('"', 11)));
 			System.out.println("----This is HEAD Request----");
@@ -232,7 +232,7 @@ public class Analyzer implements Runnable {
 			this.domainHost = host;
 		}
 
-		public static String generateGetRequestAsString(HttpHeadRequest req,
+		public static String generateHeadRequestAsString(HttpHeadRequest req,
 				String path) {
 			String res;
 			if (path.equals(""))

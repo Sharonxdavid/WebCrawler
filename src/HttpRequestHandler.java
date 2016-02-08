@@ -284,10 +284,11 @@ public class HttpRequestHandler implements Runnable {
 			System.out.println(Msgs.printMsg(Msgs.SERVER_CRAWL_URL, parametersHashMap.get("Domain")));
 			System.out.println(Msgs.printMsg(Msgs.SERVER_CRAWL_URL, parametersHashMap.get("Domain")));
 			System.out.println(Msgs.printMsg(Msgs.SERVER_CRAWL_URL, parametersHashMap.get("Domain")));
-			if(!domainMap.containsKey(parametersHashMap.get("Domain"))){
-				domainMap.put(parametersHashMap.get("Domain"), new Statistics());
-				domainMap.get(parametersHashMap.get("Domain")).map.put("Domain Name", parametersHashMap.get("Domain"));
-				downloaderQueue.enqueue(parametersHashMap.get("Domain"));
+			String crawlUrl = parametersHashMap.get("Domain");
+			if(!domainMap.containsKey(crawlUrl)){
+				domainMap.put(crawlUrl, new Statistics());
+				domainMap.get(crawlUrl).map.put("Domain Name", crawlUrl);
+				downloaderQueue.enqueue(crawlUrl);
 //				c1object.decrement();
 				ExecResListener execRes = new ExecResListener(this.downloaderQueue,this.analyzerQueue,domainMap, parametersHashMap.get("Domain"), c1object);
 				Thread execResThread = new Thread(execRes);

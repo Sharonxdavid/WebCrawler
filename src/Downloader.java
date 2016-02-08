@@ -16,64 +16,81 @@ public class Downloader implements Runnable {
 	private DataOutputStream outputStream;
 	private Socket socket;
 	private HttpGetRequest currentRequest;
-	
+
 	HashMap<String, Statistics> domainMap;
-//	class1 c1object;
+	class1 c1object;
+
+	int numOfLinks = 0;
+	int linksSizeCounter = 0;
+	int numOfImgs = 0;
+	int imgSizeCounter = 0;
 	
-	
+	private static String[] supportedVideoFormat = {"mov", "flv", "swf", "mkv", "avi", "mpg", "mp4", "wmv"};
+	private static String[] supportedImageFormat = { "jpg", "png", "bmp", "gif" };
+	private static String[] supportedDocFormat = {"pdf", "doc", "docx", "xls", "xlsx", "ppt", "pptx"};
 
 	public Downloader(SynchronizedQueue<String> url,
-			SynchronizedQueue<AnalyzerQueueObject> analyzerQueue, HashMap<String, Statistics> domainMap) {
-		 System.out.println("Downloader constructor");
-		// System.out.println(url.dequeue());
-		 
+			SynchronizedQueue<AnalyzerQueueObject> analyzerQueue,
+			HashMap<String, Statistics> domainMap, class1 c1object) {
+
+
 		this.domainMap = domainMap;
 		this.URLtoDownload = url;
 		this.HTMLtoAnalyze = analyzerQueue;
-		HTMLtoAnalyze.registerProducer();
-		
-//		this.c1object = c1object;
+		this.HTMLtoAnalyze.registerProducer();
+		this.c1object = c1object;
 	}
 
 	@Override
 	public void run() {
 		System.out.println(new Date() + "Download starts");
 		String currURL;
-		
+
 		while ((currURL = URLtoDownload.dequeue()) != null) {
-//			c1object.increment();
+			System.out.println("before increment Downloader");
+			c1object.increment();
 			// get page
 			// TODO: insert result to HTML queue
 			System.out.println(Msgs.printMsg(Msgs.DOWNLOADER_INFO, currURL));
 			String result;
-			
+
 			try {
 				result = java.net.URLDecoder.decode(currURL, "UTF-8");
 				System.out.println("URL afetr decode is: " + result);
-				if(result.startsWith("http://")){
+//				if(result.startsWith("https")){
+//					System.out.println("HTTPS is unsupported.");
+//					continue;
+//				}
+				if (result.startsWith("http://")) {
 					result = result.substring(7);
 				}
 				String relativePath = "";
 				String[] levels = result.split("/");
 				String domainHost = levels[0];
-				if(levels.length == 1)
+				if (levels.length == 1)
 					relativePath = "";
-				else{
+				else {
 					for (int i = 1; i < levels.length; i++) {
 						relativePath = relativePath + "/" + levels[i];
 					}
 				}
-				System.out.println("Domain Host is: " + domainHost);	
+				System.out.println("Domain Host is: " + domainHost);
 				System.out.println("Relative path is: " + relativePath);
-
+				// if(isHtml(relativePath)){
+				// generate GET request
+				// }
+				// else{
+				// if(isImg(relativePath) || isVideo(relativePath))
+				// TODO: create HEAD request
+				// }
 				this.currentRequest = new HttpGetRequest(domainHost);
 				String reqAsString = HttpGetRequest.generateGetRequestAsString(
 						currentRequest, relativePath);
 				System.out.println("----This is Get Request----");
 				System.out.println(reqAsString);
-				
+
 				socket = new Socket(levels[0], 80);
-				
+
 				this.outputStream = new DataOutputStream(
 						socket.getOutputStream());
 				System.out.println("Downloader Port is " + socket.getPort());
@@ -84,34 +101,26 @@ public class Downloader implements Runnable {
 				String line;
 				String urlSrcToAnalyze = "";
 				System.out.println("before read response");
-				try{
-				socket.setSoTimeout(5000);
-				while ((line = rd.readLine()) != null){
-					System.out.println(line);
-//					line = rd.readLine();
-					//System.out.println(line.replaceAll("\r", "\\R").replaceAll("\n", "\\N"));
-//					if (line == "0")
-//					{
-//						System.out.println(line);
-//						System.out.println(line);
-//						System.out.println(line);
-//						System.out.println(line);
-//						System.out.println(line);
-//						break;
-//					}
-					urlSrcToAnalyze += line;
+				try {
+					socket.setSoTimeout(5000);
+					while ((line = rd.readLine()) != null) {
+						System.out.println(line);
+						urlSrcToAnalyze += line;
+					}
+					socket.close();
+				} catch (SocketTimeoutException e) {
+					System.err.println("Socket time out! (Expected:)");
 				}
-				socket.close();
-				}
-				catch (SocketTimeoutException e){
-					System.err.println("Expected Socket time out!");
+				catch (Exception e){
+					System.err.println("failed to download " + result);
 				}
 				System.out.println(new Date() + "Enqueue Analyzer");
-				HTMLtoAnalyze.enqueue(new AnalyzerQueueObject(result, domainHost, urlSrcToAnalyze, new Date()));
-//				c1object.decrement();
-//				Analyzer analyzer = new Analyzer(URLtoDownload, HTMLtoAnalyze);
-//				analyzer.run();
-				
+				HTMLtoAnalyze.enqueue(new AnalyzerQueueObject(result,
+						domainHost, urlSrcToAnalyze, new Date()));
+				System.out.println("befor decrement Downloader");
+				c1object.decrement();
+
+
 			} catch (UnsupportedEncodingException e2) {
 				// TODO Auto-generated catch block
 				e2.printStackTrace();
@@ -123,10 +132,69 @@ public class Downloader implements Runnable {
 				e.printStackTrace();
 			}
 		}
-		HTMLtoAnalyze.unregisterProducer();
 	}
+	
+	/***
+	 * Check if requested URI is an HTML file.
+	 */
+	public boolean isHtml(String path) {
+		if (path == null) {
+			return false;
+		}
 
-
+		return path.equalsIgnoreCase("html")
+				|| path.equalsIgnoreCase("htm");
+	}
+	
+	/***
+	 * Checks if requested URI is an image
+	 */
+	public boolean isImage(String path) {
+		boolean isValidImgFormat = false;
+		if (path == null) {
+			return false;
+		} else {
+			for (int i = 0; i < supportedImageFormat.length; i++) {
+				isValidImgFormat = isValidImgFormat
+						|| path
+								.equalsIgnoreCase(supportedImageFormat[i]);
+			}
+			return isValidImgFormat;
+		}
+	}
+	/***
+	 * Checks if requested URI is a video
+	 */
+	public boolean isVideo(String path) {
+		boolean isValidVideoFormat = false;
+		if (path == null) {
+			return false;
+		} else {
+			for (int i = 0; i < supportedVideoFormat.length; i++) {
+				isValidVideoFormat = isValidVideoFormat
+						|| path
+								.equalsIgnoreCase(supportedVideoFormat[i]);
+			}
+			return isValidVideoFormat;
+		}
+	}
+	/***
+	 * Checks if requested URI is a document
+	 */
+	public boolean isDoc(String path){
+		boolean isValidDocFormat = false;
+		if (path == null) {
+			return false;
+		} else {
+			for (int i = 0; i < supportedDocFormat.length; i++) {
+				isValidDocFormat = isValidDocFormat
+						|| path
+								.equalsIgnoreCase(supportedDocFormat[i]);
+			}
+			return isValidDocFormat;
+		}
+	}
+	
 	public static class HttpGetRequest {
 		public String requestHeaders;
 		public HashMap<String, String> headerParams;
@@ -143,10 +211,10 @@ public class Downloader implements Runnable {
 		public static String generateGetRequestAsString(HttpGetRequest req,
 				String path) {
 			String res;
-			if(path.equals(""))
-				res = methodType + " "  + "/" + " " + httpVersion + CRLF;
+			if (path.equals(""))
+				res = methodType + " " + "/" + " " + httpVersion + CRLF;
 			else
-				res = methodType + " "  + path + " " + httpVersion + CRLF;
+				res = methodType + " " + path + " " + httpVersion + CRLF;
 			res = res + "Host: " + req.domainHost + " " + CRLF;
 			res = res + CRLF;
 			return res;
@@ -177,7 +245,32 @@ public class Downloader implements Runnable {
 			// TODO Auto-generated method stub
 			return null;
 		}
+	}
 
+	public static class HttpHeadRequest {
+		public String requestHeaders;
+		public HashMap<String, String> headerParams;
+		public static HttpMethods methodType = HttpMethods.HEAD;
+		public static String httpVersion = "HTTP/1.1";
+		public String UserAgent = "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/47.0.2526.111 Safari/537.36";
+		public static String CRLF = "\r\n";
+		public static String domainHost;
+
+		public HttpHeadRequest(String host) {
+			this.domainHost = host;
+		}
+
+		public static String generateHeadRequestAsString(HttpHeadRequest req,
+				String path) {
+			String res;
+			if (path.equals(""))
+				res = methodType + " " + "/" + " " + httpVersion + CRLF;
+			else
+				res = methodType + " " + path + " " + httpVersion + CRLF;
+			res = res + "Host: " + req.domainHost + " " + CRLF;
+			res = res + CRLF;
+			return res;
+		}
 	}
 
 }

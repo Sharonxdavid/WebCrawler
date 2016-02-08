@@ -22,13 +22,13 @@ public class SynchronizedQueue<T> {
 	 *            Buffer capacity
 	 */
 	@SuppressWarnings("unchecked")
-	public SynchronizedQueue(int capacity, class1 obj) {
+	public SynchronizedQueue(int capacity) {
 		this.buffer = (T[]) (new Object[capacity]);
 		this.producers = 0;
 		this.first = 0;
 		this.last = 0;
 		this.currSize = 0;
-		this.c1object = obj;
+//		this.c1object = obj;
 	}
 
 	/**
@@ -46,6 +46,7 @@ public class SynchronizedQueue<T> {
 		
 		while(0 == this.currSize){
 			if (0 == this.producers){
+				System.out.println("deque 0 producers");
 				return null;
 			}
 			else {
@@ -57,7 +58,7 @@ public class SynchronizedQueue<T> {
 			}
 		}
 		//Before the pop that way - J++, while the list is not empty.
-		c1object.increment();
+//		c1object.increment();
 		//no need to wait and there is at least one element in the queue
 		T curr = this.buffer[first];
 		currSize--; //update size
@@ -89,7 +90,7 @@ public class SynchronizedQueue<T> {
 		
 
 		//After the push - J--, after the item is added to the list.
-		c1object.decrement();
+//		c1object.decrement();
 		this.notifyAll();
 	}
 

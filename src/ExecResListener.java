@@ -33,12 +33,12 @@ public class ExecResListener implements Runnable {
 		System.out.println("---Started ExecResListener---");
 		System.out.println("---Started ExecResListener---");
 		while (true) {
-			System.out.println("before test: " + c1object.isDone(downloaderQueue, analyzerQueue));
 			if (c1object.isDone(downloaderQueue, analyzerQueue)) {
 				break;
 			} else {
 				try {
-					Thread.sleep(9000);
+//					Thread.sleep(9000);
+					Thread.sleep(20000);
 				} catch (InterruptedException e) {
 					// TODO Auto-generated catch block
 					e.printStackTrace();
