@@ -8,10 +8,14 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.net.InetSocketAddress;
 import java.net.Socket;
+import java.net.SocketTimeoutException;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map.Entry;
+
 
 /**
  * HttpRequestHandler class
@@ -280,24 +284,37 @@ public class HttpRequestHandler implements Runnable {
 		if (this.currentRequest.requestedPageLocation
 				.equalsIgnoreCase("stats.html")) {
 			parseParamsFromString(requestBody);
-			System.out.println(Msgs.printMsg(Msgs.SERVER_CRAWL_URL, parametersHashMap.get("Domain")));
-			System.out.println(Msgs.printMsg(Msgs.SERVER_CRAWL_URL, parametersHashMap.get("Domain")));
-			System.out.println(Msgs.printMsg(Msgs.SERVER_CRAWL_URL, parametersHashMap.get("Domain")));
-			System.out.println(Msgs.printMsg(Msgs.SERVER_CRAWL_URL, parametersHashMap.get("Domain")));
-			System.out.println(Msgs.printMsg(Msgs.SERVER_CRAWL_URL, parametersHashMap.get("Domain")));
+
 			String crawlUrl = parametersHashMap.get("Domain");
+
+			// both strings are null or "on"
+			String robotScan = parametersHashMap.get("robotscan");
+			String portScan = parametersHashMap.get("portscan");
+
 			String tempCrawlUrl="";
+			int crawlPort = 80;
 			tempCrawlUrl = java.net.URLDecoder.decode(crawlUrl, "UTF-8");
 			if(!domainMap.containsKey(tempCrawlUrl)){
 				if(tempCrawlUrl.contains(":")){
 					String[] temp = tempCrawlUrl.split(":");
 					crawlUrl = temp[0];
+					crawlPort = Integer.valueOf(temp[1]);
 				}
+				
+				if (portScan != null && portScan.equals("on")){
+					startPortScan(crawlUrl);
+				}
+				if (robotScan == null || robotScan.equals("off")){
+					
+					RobotRules rr = RobotRules.loadRobotsTxt(crawlUrl, crawlPort);
+				}
+				
+				
 				domainMap.put(crawlUrl, new Statistics());
 				domainMap.get(crawlUrl).map.put("Domain Name", crawlUrl);
-//				crawlUrl = tempCrawlUrl;
-				downloaderQueue.enqueue(tempCrawlUrl);
-//				c1object.decrement();
+
+//				downloaderQueue.enqueue(tempCrawlUrl);TODO: TODO TODO TODO TODO TODO TODO TODO TODO TODO
+
 				ExecResListener execRes = new ExecResListener(this.downloaderQueue,this.analyzerQueue,domainMap, domainMap.get(crawlUrl).map.get("Domain Name"), c1object);
 				Thread execResThread = new Thread(execRes);
 				execResThread.start();
@@ -317,6 +334,16 @@ public class HttpRequestHandler implements Runnable {
 			}
 		}
 		return pageContent;
+	}
+
+	private void startPortScan(String crawlUrl) {
+		// TODO Auto-generated method stub
+		System.out.println("Starting Port Scan Stub");
+		System.out.println("Starting Port Scan Stub");
+		System.out.println("Starting Port Scan Stub");
+		System.out.println("Starting Port Scan Stub");
+		System.out.println("Starting Port Scan Stub");
+		System.out.println("Starting Port Scan Stub");
 	}
 
 	private byte[] createStatsPostResponseHTML(String key) throws IOException {
