@@ -6,6 +6,20 @@ public class Statistics {
 
 	public Statistics() {
 		map = new HashMap<>();
+		map.put("Domain Name", "");
+		map.put("# of imgs", "0");
+		map.put("Total img size", "0");
+		map.put("# of videos", "0");
+		map.put("Total videos size", "0");
+		map.put("# of documents", "0");
+		map.put("Total documents size", "0");
+		map.put("# of urls", "0");
+		map.put("Total url size", "0");
+		map.put("# of external links", "0");
+		map.put("# of internal links","0");
+		map.put("Respect robot.txt", "");
+		map.put("open ports", "0");
+		map.put("AVG RTT", "0");
 	}
 
 	public synchronized void addToKey(String key, String value) {

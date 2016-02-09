@@ -293,12 +293,12 @@ public class HttpRequestHandler implements Runnable {
 					String[] temp = tempCrawlUrl.split(":");
 					crawlUrl = temp[0];
 				}
-				domainMap.put(crawlUrl, new Statistics());
-				domainMap.get(crawlUrl).map.put("Domain Name", crawlUrl);
+				domainMap.put(tempCrawlUrl, new Statistics());
+				domainMap.get(tempCrawlUrl).map.put("Domain Name", tempCrawlUrl);
 //				crawlUrl = tempCrawlUrl;
 				downloaderQueue.enqueue(tempCrawlUrl);
 //				c1object.decrement();
-				ExecResListener execRes = new ExecResListener(this.downloaderQueue,this.analyzerQueue,domainMap, domainMap.get(crawlUrl).map.get("Domain Name"), c1object);
+				ExecResListener execRes = new ExecResListener(this.downloaderQueue,this.analyzerQueue,domainMap, domainMap.get(tempCrawlUrl).map.get("Domain Name"), c1object);
 				Thread execResThread = new Thread(execRes);
 				execResThread.start();
 			}
