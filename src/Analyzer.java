@@ -14,20 +14,18 @@ import java.util.Map.Entry;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-
 public class Analyzer implements Runnable {
 
 	private SynchronizedQueue<String> URLtoDownload;
 	private SynchronizedQueue<AnalyzerQueueObject> HTMLtoAnalyze;
 	int imgCounter = 0;
 	int urlCounter = 0;
-//	HashMap<String, String> params = new HashMap<String, String>();
 	HashMap<String, Statistics> domainMap;
 	class1 c1object;
-	
 
 	public Analyzer(SynchronizedQueue<String> url,
-			SynchronizedQueue<AnalyzerQueueObject> data, HashMap<String, Statistics> domainMap, class1 c1object) {
+			SynchronizedQueue<AnalyzerQueueObject> data,
+			HashMap<String, Statistics> domainMap, class1 c1object) {
 
 		this.HTMLtoAnalyze = data;
 		this.URLtoDownload = url;
@@ -42,100 +40,55 @@ public class Analyzer implements Runnable {
 		String currPageBody;
 
 		while ((currData = HTMLtoAnalyze.dequeue()) != null) {
-			System.out.println(Thread.currentThread().getName() + " " + "Before increment Analyzer");
+			System.out.println(Thread.currentThread().getName() + " "
+					+ "Before increment Analyzer");
 			c1object.increment();
 			// analyze currPage
 			// insert new url to url queue
-			System.out.println(Thread.currentThread().getName() + " " + "Analyzer Object Params:");
-			System.out.println(Thread.currentThread().getName() + " " + "1" + currData.url);
-			System.out.println(Thread.currentThread().getName() + " " + "2" + currData.host);
-			System.out.println(Thread.currentThread().getName() + " " + "3" + currData.htmlBody);
-			System.out.println(Thread.currentThread().getName() + " " + "4" + currData.downloadDate);
-			System.out.println(Thread.currentThread().getName() + " " + "5 Domain and Date " + currData.toString());
-			
-//			if(!domainMap.containsKey(currData.host)){
-//				domainMap.put(currData.host, new Statistics());
-//				domainMap.get(currData.host).addToKey("Domain Name", currData.host);
-//			}
-			
-			currPageBody = currData.htmlBody;
-			crawlHref(currPageBody, currData.host);
-			System.out.println(Thread.currentThread().getName() + " " + "# of urls " + urlCounter);
-			domainMap.get(currData.host).addToKey("# of urls", String.valueOf(urlCounter));
-//			params.put("# of imgs", Integer.toString(imgCounter));
-//			try {
-//				crawlImgs(currPageBody, currData.host);
-//			} catch (IOException e) {
-//				// TODO Auto-generated catch block
-//				e.printStackTrace();
-//			}
-			domainMap.get(currData.host).addToKey("# of imgs", String.valueOf(imgCounter));
-//			params.put("# of imgs", Integer.toString(imgCounter));
-			System.out.println(Thread.currentThread().getName() + " " + "# of imgs " + imgCounter);
-//			if(!(currData.url.equals(currData.host)))
-//				try {
-//					createPageStats(params, currData.toString());
-//				} catch (IOException e) {
-//					// TODO Auto-generated catch block
-//					e.printStackTrace();
-//				}
-			System.out.println(Thread.currentThread().getName() + " " + "before decrement analyzer");
-			c1object.decrement();
+			System.out.println(Thread.currentThread().getName()
+					+ "Request content-length: " + currData.ContentLength
+					+ " URL " + currData.url);
+			if(currData.ContentType.equalsIgnoreCase("image/png") || currData.ContentType.equalsIgnoreCase("image/bmp") || currData.ContentType.equalsIgnoreCase("image/jpg") || currData.ContentType.equalsIgnoreCase("image/gif") || currData.ContentType.equalsIgnoreCase("image/ico")){
+				System.out.println("IMG CONTENT LENGTH IS " + currData.ContentLength);
+			}
+			// if(!domainMap.containsKey(currData.host)){
+			// domainMap.put(currData.host, new Statistics());
+			// domainMap.get(currData.host).addToKey("Domain Name",
+			// currData.host);
+			// }
+			if (currData.statusCode.equalsIgnoreCase("200")) {
+				currPageBody = currData.httpResponseAsString;
+				crawlHref(currPageBody, currData.host);
+				System.out.println(Thread.currentThread().getName() + " "
+						+ "# of urls " + urlCounter);
+
+				crawlImgs(currPageBody, currData.host, currData.url);
+
+				System.out.println(Thread.currentThread().getName() + " "
+						+ "# of imgs " + imgCounter + "URL " + currData.url);
+				// if url.isImage || video || doc then
+				// domainMap.get(host).addToKey("Total size of imgs",
+				// String.valueOf(imgSizeCounter));
+
+				System.out.println(Thread.currentThread().getName() + " "
+						+ "before decrement analyzer");
+				c1object.decrement();
+			} else {
+				System.out.println(Thread.currentThread().getName()
+						+ "STATUS CODE IS NOT 200 OK");
+				c1object.decrement();
+			}
+
 		}
 	}
 
-	private void createPageStats(HashMap<String, String> params, String domain)
-			throws IOException {
-		System.out.println("DOMAIN IN STATS IS: " + domain);
-		File file = new File(domain + ".html");
-		BufferedWriter bw = new BufferedWriter(new FileWriter(file));
-
-		bw.write("<!DOCTYPE html>");
-
-		bw.write("<head>");
-		// bw.write("<link rel=\"stylesheet\" type=\"text/css\" href=\"style.css\">");
-		bw.write("</head>");
-		bw.write("<body bgcolor='#A9D0F5'>");
-		bw.write("<iframe src=\"http://free.timeanddate.com/clock/i4za5yzk/n676/szw110/szh110/hbw0/hfc111/cf100/hgr0/fav0/fiv0/mqcfff/mql15/mqw4/mqd94/mhcfff/mhl15/mhw4/mhd94/hhcbbb/hmcddd/hsceee\" frameborder=\"0\" width=\"110\" height=\"110\" align:\"right\"></iframe>");
-
-		bw.write("<h2>Computer networks 2015/2016</h2>");
-		bw.write("<h3> Tal Bigel, Sharon David </h3>");
-
-		bw.write("<br>");
-
-		bw.write("<h3>" + domain + "</h3>");
-		bw.write("<br>");
-
-		bw.write("<table border = \"1\"");
-		bw.write("<tr>");
-		bw.write("</tr>");
-
-		for (Entry<String, String> entry : params.entrySet()) {
-			bw.write("<tr>");
-			bw.write("<td>");
-			bw.write(entry.getKey());
-			bw.write("</td>");
-			bw.write("<td>");
-			bw.write(entry.getValue());
-			bw.write("</td>");
-			bw.write("</tr>");
-		}
-
-		bw.write("</table>");
-		bw.write("</div>");
-		bw.write("<a href='index.html' class=\"link\">Back to index</a><br>");
-		bw.write("<a href='form.html' class=\"link\">Back to form</a>");
-		bw.write("</body>");
-		bw.write("</html>");
-		bw.close();
-
-	}
 
 	private void crawlHref(String currPage, String host) {
 		Pattern p = Pattern.compile("<a href=\"(.*?)\">");
 		Matcher m = p.matcher(currPage);
 		System.out.println("**Matcher loop**");
 		String nextUrl;
+		urlCounter = 0;
 		while (m.find()) {
 			System.out.println("Group 0 is " + m.group(0));
 			System.out.println(m.group(1));
@@ -179,44 +132,61 @@ public class Analyzer implements Runnable {
 			System.out.println("NEXT URL IS " + nextUrl);
 			URLtoDownload.enqueue(nextUrl);
 		}
+		domainMap.get(host).addToKey("# of urls", String.valueOf(urlCounter));
 	}
 
-	private void crawlImgs(String currPage, String host)
-			throws UnknownHostException, IOException {
+	private void crawlImgs(String currPage, String host, String url) {
+		imgCounter = 0;
 		Pattern p = Pattern.compile("<img.+?src=\"(.+?)\".*?>");
 		Matcher m = p.matcher(currPage);
 		System.out.println("**Matcher loop**");
 		int imgSizeCounter = 0;
+		String nextImg;
 		while (m.find()) {
-			System.out.println(m.group(0));
-			HttpHeadRequest getImgSize = new HttpHeadRequest(host);
-			String reqAsString = HttpHeadRequest.generateHeadRequestAsString(
-					getImgSize,
-					m.group(0).substring(10, m.group(0).indexOf('"', 11)));
-			System.out.println("----This is HEAD Request----");
-			System.out.println(reqAsString);
-
-			Socket socket = new Socket(host, 80);
-
-			DataOutputStream outputStream = new DataOutputStream(
-					socket.getOutputStream());
-			System.out.println("Analyzer Port is " + socket.getPort());
-			outputStream.write(reqAsString.getBytes());
-
-			BufferedReader rd = new BufferedReader(new InputStreamReader(
-					socket.getInputStream()));
-			String line;
-			while ((line = rd.readLine()) != null) {
-				System.out.println(line);
-				if (line.startsWith("Content-Length:"))
-					imgSizeCounter = imgSizeCounter
-							+ Integer.valueOf(line.substring(16));
-			}
+			System.out.println("GROUP 0" + m.group(0));
+			System.out.println("IMG GROUP 1" + m.group(1) + " URL " + url + " "
+					+ domainMap.get(host).map.get("# of imgs"));
 			imgCounter++;
+			if (m.group(1).startsWith("http://")) {
+				String temp = m.group(1).substring(7);
+				String relativePath = "";
+				String[] levels = temp.split("/");
+				String domainHost = levels[0];
+				if (levels.length == 1)
+					relativePath = "";
+				else {
+					for (int i = 1; i < levels.length; i++) {
+						relativePath = relativePath + "/" + levels[i];
+					}
+				}
+				System.out.println("Domain Host is: " + domainHost);
+				System.out.println("Relative path is: " + relativePath);
+				if (domainHost.equalsIgnoreCase(host)) {
+					nextImg = host + relativePath;
+				} else {
+					nextImg = domainHost + relativePath;
+				}
+			} else {
+				if (m.group(1).startsWith("/")) {
+					nextImg = host + m.group(1);
+				} else {
+					String relativePath = "";
+					String[] levels = m.group(1).split("/");
+					String domainHost = levels[0];
+					if (levels.length == 1)
+						relativePath = "";
+					else {
+						for (int i = 1; i < levels.length; i++) {
+							relativePath = relativePath + "/" + levels[i];
+						}
+					}
+					nextImg = domainHost + relativePath;
+				}
+			}
+			System.out.println("NEXT URL IS " + nextImg);
+			URLtoDownload.enqueue(nextImg);
 		}
-		System.out.println("@@IMGS SIZE IS: " + imgSizeCounter);
-		domainMap.get(host).addToKey("Total size of imgs", String.valueOf(imgSizeCounter));
-//		params.put("total size of imgs", Integer.toString(imgSizeCounter));
+		domainMap.get(host).addToKey("# of imgs", String.valueOf(imgCounter));
 	}
 
 	public static class HttpHeadRequest {

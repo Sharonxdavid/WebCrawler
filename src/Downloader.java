@@ -1,3 +1,4 @@
+import java.awt.HeadlessException;
 import java.io.BufferedReader;
 import java.io.DataOutputStream;
 import java.io.IOException;
@@ -28,7 +29,7 @@ public class Downloader implements Runnable {
 
 	private static String[] supportedVideoFormat = { "mov", "flv", "swf",
 			"mkv", "avi", "mpg", "mp4", "wmv" };
-	private static String[] supportedImageFormat = { "jpg", "png", "bmp", "gif" };
+	private static String[] supportedImageFormat = { "jpg", "png", "bmp", "gif" , "ico"};
 	private static String[] supportedDocFormat = { "pdf", "doc", "docx", "xls",
 			"xlsx", "ppt", "pptx" };
 
@@ -81,6 +82,44 @@ public class Downloader implements Runnable {
 				if (isImage(relativePath) || isVideo(relativePath)
 						|| isDoc(relativePath)) {
 					System.out.println(Thread.currentThread().getName() + " " + "media file");
+					HttpHeadRequest currentHeadRequest = new HttpHeadRequest(domainHost);
+					String reqAsString = HttpHeadRequest.generateHeadRequestAsString(currentHeadRequest, relativePath);
+					System.out.println(Thread.currentThread().getName() + " " + "----This is HEAD Request----");
+					System.out.println(Thread.currentThread().getName() + " " + reqAsString);
+					socket = new Socket();
+					socket.connect(new InetSocketAddress(domainHost, 80), 1000);
+					while (socket.isConnected() == false) {
+						//TODO: enter timeout to make sure it quits sometime...
+					}
+
+					this.outputStream = new DataOutputStream(socket.getOutputStream());
+					outputStream.write(reqAsString.getBytes());
+
+					BufferedReader rd = new BufferedReader(new InputStreamReader(
+							socket.getInputStream()));
+//					ByteStringInputStream rd = new ByteStringInputStream(socket.getInputStream());
+					String line;
+					String urlSrcToAnalyze = "";
+					System.out.println(Thread.currentThread().getName() + " " + "before read response");
+					try {
+						socket.setSoTimeout(5000);
+						while ((line = rd.readLine()) != null) {
+							System.out.println(Thread.currentThread().getName() +  " " + line);
+							urlSrcToAnalyze += line + "\r\n";
+						}
+						socket.close();
+						System.out.println(Thread.currentThread().getName() + " " + new Date() + " Enqueue Analyzer1");
+						HTMLtoAnalyze.enqueue(new AnalyzerQueueObject(result,
+								domainHost, urlSrcToAnalyze, new Date()));
+					} catch (SocketTimeoutException e) {
+						System.out.println(Thread.currentThread().getName() + " " + "Socket time out! (Expected:)");
+						System.out.println(Thread.currentThread().getName() + " " + new Date() + " Enqueue Analyzer2");
+						HTMLtoAnalyze.enqueue(new AnalyzerQueueObject(result,
+								domainHost, urlSrcToAnalyze, new Date()));
+					} catch (Exception e) {
+						System.out.println(Thread.currentThread().getName() + " " + "failed to download " + result);
+						e.printStackTrace();
+					}
 				}
 				else {
 					this.currentRequest = new HttpGetRequest(domainHost);
@@ -97,19 +136,19 @@ public class Downloader implements Runnable {
 					}
 
 					this.outputStream = new DataOutputStream(socket.getOutputStream());
-					System.out.println(Thread.currentThread().getName() + " " + "Downloader Port is " + socket.getPort());
 					outputStream.write(reqAsString.getBytes());
 
 					BufferedReader rd = new BufferedReader(new InputStreamReader(
 							socket.getInputStream()));
+//					ByteStringInputStream rd = new ByteStringInputStream(socket.getInputStream());
 					String line;
 					String urlSrcToAnalyze = "";
 					System.out.println(Thread.currentThread().getName() + " " + "before read response");
 					try {
 						socket.setSoTimeout(5000);
 						while ((line = rd.readLine()) != null) {
-							System.out.println(line);
-							urlSrcToAnalyze += line;
+							System.out.println(Thread.currentThread().getName() +  " " + line);
+							urlSrcToAnalyze += line + "\r\n";
 						}
 						socket.close();
 						System.out.println(Thread.currentThread().getName() + " " + new Date() + " Enqueue Analyzer1");

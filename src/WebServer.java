@@ -122,12 +122,14 @@ public class WebServer {
 					startThread(canCreateNewThread, currentConnection, downloaderQueue, analyzerQueue);
 				} catch (Exception e) {
 					System.out.println(e.getClass().getSimpleName()
-							+ " thrown, with message: " + e.getMessage());
+							+ " Server listener loop --- 4 thrown, with message: " + e.getMessage());
+					e.printStackTrace();
 				}
 			}
 		} catch (Exception e) {
 			System.out.println(e.getClass().getSimpleName()
-					+ " thrown, with message: " + e.getMessage());
+					+ " 5 thrown, with message: " + e.getMessage());
+			e.printStackTrace();
 		} finally {
 			try {
 				// When finished,close socket.
@@ -260,16 +262,19 @@ public class WebServer {
 			webServer.requestsListener();
 		} catch (FileNotFoundException e) {
 			System.out.println(e.getClass().getSimpleName()
-					+ " thrown, with message: " + e.getMessage()
+					+" 1 thrown, with message: " + e.getMessage()
 					+ "\nThe config file is missing!");
+			e.printStackTrace();
 			System.exit(-1);
 		} catch (IOException e) {
 			System.out.println(e.getClass().getSimpleName()
-					+ " thrown, with message: " + e.getMessage());
+					+" 2 thrown, with message: " + e.getMessage());
+			e.printStackTrace();
 			System.exit(-1);
 		} catch (Exception e) {
 			System.out.println(e.getClass().getSimpleName()
-					+ " thrown, with message: " + e.getMessage());
+					+ " 3 thrown, with message: " + e.getMessage());
+			e.printStackTrace();
 			System.exit(-1);
 		}
 	}

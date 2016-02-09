@@ -537,11 +537,11 @@ public class HttpRequestHandler implements Runnable {
 				outputStream.writeBytes(e.toString());
 			} catch (IOException e2) {
 				System.out.println(e2.getClass().getSimpleName()
-						+ " thrown, with message: " + e.getMessage());
+						+  e.getStackTrace() + " 6 thrown, with message: " + e.getMessage());
 			}
 		} catch (Exception e) {
 			System.out.println(e.getClass().getSimpleName()
-					+ " thrown, with message: " + e.getMessage());
+					+  e.getStackTrace() +" 7 thrown, with message: " + e.getMessage());
 		} finally {
 			try {
 				decreaseThreadCounter(); // thread has finished
