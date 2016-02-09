@@ -6,6 +6,7 @@ import java.io.InputStreamReader;
 import java.io.UnsupportedEncodingException;
 import java.net.InetSocketAddress;
 import java.net.Socket;
+import java.net.SocketException;
 import java.net.SocketTimeoutException;
 import java.net.UnknownHostException;
 import java.util.Date;
@@ -46,6 +47,7 @@ public class Downloader implements Runnable {
 
 	@Override
 	public void run() {
+		int crawlPort = 80;
 		System.out.println(new Date() + "Download starts");
 		String currURL;
 
@@ -77,6 +79,13 @@ public class Downloader implements Runnable {
 						relativePath = relativePath + "/" + levels[i];
 					}
 				}
+				if(domainHost.contains(":")){
+					String[] temp = domainHost.split(":");
+					domainHost = temp[0];
+					crawlPort = Integer.valueOf(temp[1]);
+				}
+				
+				System.out.println("************" +"url host is " + domainHost + "port " + crawlPort + " path is" + relativePath);
 				System.out.println(Thread.currentThread().getName() + " " + "Domain Host is: " + domainHost);
 				System.out.println(Thread.currentThread().getName() + " " + "Relative path is: " + relativePath);
 				if (isImage(relativePath) || isVideo(relativePath)
@@ -87,7 +96,7 @@ public class Downloader implements Runnable {
 					System.out.println(Thread.currentThread().getName() + " " + "----This is HEAD Request----");
 					System.out.println(Thread.currentThread().getName() + " " + reqAsString);
 					socket = new Socket();
-					socket.connect(new InetSocketAddress(domainHost, 80), 1000);
+					socket.connect(new InetSocketAddress(domainHost, crawlPort), 1000);
 					while (socket.isConnected() == false) {
 						//TODO: enter timeout to make sure it quits sometime...
 					}
@@ -110,12 +119,15 @@ public class Downloader implements Runnable {
 						socket.close();
 						System.out.println(Thread.currentThread().getName() + " " + new Date() + " Enqueue Analyzer1");
 						HTMLtoAnalyze.enqueue(new AnalyzerQueueObject(result,
-								domainHost, urlSrcToAnalyze, new Date()));
+								domainHost,crawlPort, urlSrcToAnalyze, new Date()));
 					} catch (SocketTimeoutException e) {
 						System.out.println(Thread.currentThread().getName() + " " + "Socket time out! (Expected:)");
 						System.out.println(Thread.currentThread().getName() + " " + new Date() + " Enqueue Analyzer2");
 						HTMLtoAnalyze.enqueue(new AnalyzerQueueObject(result,
-								domainHost, urlSrcToAnalyze, new Date()));
+								domainHost,crawlPort, urlSrcToAnalyze, new Date()));
+					} catch (SocketException e){
+						System.out.println(Thread.currentThread().getName() + " " + "Socket expcetion in here");
+						e.getStackTrace();
 					} catch (Exception e) {
 						System.out.println(Thread.currentThread().getName() + " " + "failed to download " + result);
 						e.printStackTrace();
@@ -130,7 +142,7 @@ public class Downloader implements Runnable {
 					System.out.println(Thread.currentThread().getName() + " " + reqAsString);
 
 					socket = new Socket();
-					socket.connect(new InetSocketAddress(domainHost, 80), 1000);
+					socket.connect(new InetSocketAddress(domainHost, crawlPort), 1000);
 					while (socket.isConnected() == false) {
 						//TODO: enter timeout to make sure it quits sometime...
 					}
@@ -153,12 +165,15 @@ public class Downloader implements Runnable {
 						socket.close();
 						System.out.println(Thread.currentThread().getName() + " " + new Date() + " Enqueue Analyzer1");
 						HTMLtoAnalyze.enqueue(new AnalyzerQueueObject(result,
-								domainHost, urlSrcToAnalyze, new Date()));
+								domainHost,crawlPort, urlSrcToAnalyze, new Date()));
 					} catch (SocketTimeoutException e) {
 						System.out.println(Thread.currentThread().getName() + " " + "Socket time out! (Expected:)");
 						System.out.println(Thread.currentThread().getName() + " " + new Date() + " Enqueue Analyzer2");
 						HTMLtoAnalyze.enqueue(new AnalyzerQueueObject(result,
-								domainHost, urlSrcToAnalyze, new Date()));
+								domainHost,crawlPort, urlSrcToAnalyze, new Date()));
+					} catch(SocketException e){
+						System.out.println(Thread.currentThread().getName() + " " + "Socket Exception");
+						e.printStackTrace();
 					} catch (Exception e) {
 						System.out.println(Thread.currentThread().getName() + " " + "failed to download " + result);
 						e.printStackTrace();

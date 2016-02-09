@@ -2,6 +2,7 @@ import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.HashMap;
@@ -116,8 +117,8 @@ public class ExecResListener implements Runnable {
 
 		bw.write("</table>");
 		bw.write("</div>");
-		bw.write("<a href='index.html' class=\"link\">Back to index</a><br>");
-		bw.write("<a href='form.html' class=\"link\">Back to form</a>");
+		bw.write("<a href='/index.html' class=\"link\">Back to index</a><br>");
+		bw.write("<a href='/form.html' class=\"link\">Back to form</a>");
 		bw.write("</body>");
 		bw.write("</html>");
 		bw.close();

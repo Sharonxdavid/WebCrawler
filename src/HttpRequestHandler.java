@@ -252,6 +252,7 @@ public class HttpRequestHandler implements Runnable {
 			httpResponse[0] = exception.toString().getBytes();
 			return httpResponse;
 		} catch (Exception exception) {
+			exception.getStackTrace();
 			HttpRequestException httpRequestException = new HttpRequestException(
 					500);
 			httpResponse[0] = httpRequestException.toString().getBytes();
@@ -285,19 +286,26 @@ public class HttpRequestHandler implements Runnable {
 			System.out.println(Msgs.printMsg(Msgs.SERVER_CRAWL_URL, parametersHashMap.get("Domain")));
 			System.out.println(Msgs.printMsg(Msgs.SERVER_CRAWL_URL, parametersHashMap.get("Domain")));
 			String crawlUrl = parametersHashMap.get("Domain");
-			if(!domainMap.containsKey(crawlUrl)){
+			String tempCrawlUrl="";
+			tempCrawlUrl = java.net.URLDecoder.decode(crawlUrl, "UTF-8");
+			if(!domainMap.containsKey(tempCrawlUrl)){
+				if(tempCrawlUrl.contains(":")){
+					String[] temp = tempCrawlUrl.split(":");
+					crawlUrl = temp[0];
+				}
 				domainMap.put(crawlUrl, new Statistics());
 				domainMap.get(crawlUrl).map.put("Domain Name", crawlUrl);
-				downloaderQueue.enqueue(crawlUrl);
+//				crawlUrl = tempCrawlUrl;
+				downloaderQueue.enqueue(tempCrawlUrl);
 //				c1object.decrement();
-				ExecResListener execRes = new ExecResListener(this.downloaderQueue,this.analyzerQueue,domainMap, parametersHashMap.get("Domain"), c1object);
+				ExecResListener execRes = new ExecResListener(this.downloaderQueue,this.analyzerQueue,domainMap, domainMap.get(crawlUrl).map.get("Domain Name"), c1object);
 				Thread execResThread = new Thread(execRes);
 				execResThread.start();
 			}
 			System.out.println(new Date() + "HTTP handler, queue size " + downloaderQueue.getSize());
 //			Downloader downloader = new Downloader(downloaderQueue, analyzerQueue);
 //			downloader.run();
-			pageContent = createStatsPostResponseHTML();
+			pageContent = createStatsPostResponseHTML(crawlUrl);
 		} else {
 			if (this.currentRequest.requestedPageLocation
 					.equalsIgnoreCase(serverSubmitResponseFileName)) {
@@ -311,10 +319,10 @@ public class HttpRequestHandler implements Runnable {
 		return pageContent;
 	}
 
-	private byte[] createStatsPostResponseHTML() throws IOException {
+	private byte[] createStatsPostResponseHTML(String key) throws IOException {
 		File file = new File(rootDir + "stats.html");
 		BufferedWriter bw = new BufferedWriter(new FileWriter(file));
-		postResponseStatsHTMLBody(bw);
+		postResponseStatsHTMLBody(bw, key);
 
 		FileInputStream fileInputStream = new FileInputStream(file);
 		byte[] responseBytes = new byte[(int) file.length()];
@@ -327,7 +335,7 @@ public class HttpRequestHandler implements Runnable {
 		return responseBytes;
 	}
 
-	private void postResponseStatsHTMLBody(BufferedWriter bw) throws IOException {
+	private void postResponseStatsHTMLBody(BufferedWriter bw, String key) throws IOException {
 		bw.write("<!DOCTYPE html>");
 
 		bw.write("<head>");
@@ -357,7 +365,8 @@ public class HttpRequestHandler implements Runnable {
 
 		bw.write("</tr>");
 
-		for (Entry<String, String> entry : parametersHashMap.entrySet()) {
+//		for (Entry<String, String> entry : parametersHashMap.entrySet()) {
+		for (Entry<String, String> entry : domainMap.get(key).map.entrySet()) {
 			bw.write("<tr>");
 			bw.write("<td>");
 			bw.write(entry.getKey());
@@ -370,8 +379,8 @@ public class HttpRequestHandler implements Runnable {
 
 		bw.write("</table>");
 		bw.write("</div>");
-		bw.write("<a href='index.html' class=\"link\">Back to index</a><br>");
-		bw.write("<a href='form.html' class=\"link\">Back to form</a>");
+		bw.write("<a href='/index.html' class=\"link\">Back to index</a><br>");
+		bw.write("<a href='/form.html' class=\"link\">Back to form</a>");
 		bw.write("</body>");
 		bw.write("</html>");
 		bw.close();
@@ -453,7 +462,7 @@ public class HttpRequestHandler implements Runnable {
 		bw.write("<!DOCTYPE html>");
 
 		bw.write("<head>");
-		bw.write("<link rel=\"stylesheet\" type=\"text/css\" href=\"style.css\">");
+		bw.write("<link rel=\"stylesheet\" type=\"text/css\" href=\"/style.css\">");
 		bw.write("</head>");
 		bw.write("<body bgcolor='#A9D0F5'>");
 		bw.write("<iframe src=\"http://free.timeanddate.com/clock/i4za5yzk/n676/szw110/szh110/hbw0/hfc111/cf100/hgr0/fav0/fiv0/mqcfff/mql15/mqw4/mqd94/mhcfff/mhl15/mhw4/mhd94/hhcbbb/hmcddd/hsceee\" frameborder=\"0\" width=\"110\" height=\"110\" align:\"right\"></iframe>");
@@ -492,8 +501,8 @@ public class HttpRequestHandler implements Runnable {
 
 		bw.write("</table>");
 		bw.write("</div>");
-		bw.write("<a href='index.html' class=\"link\">Back to index</a><br>");
-		bw.write("<a href='form.html' class=\"link\">Back to form</a>");
+		bw.write("<a href='/index.html' class=\"link\">Back to index</a><br>");
+		bw.write("<a href='/form.html' class=\"link\">Back to form</a>");
 		bw.write("</body>");
 		bw.write("</html>");
 		bw.close();
@@ -548,6 +557,7 @@ public class HttpRequestHandler implements Runnable {
 				socket.close();
 				downloaderQueue.unregisterProducer();
 			} catch (IOException e) {
+				e.getStackTrace();
 				System.out
 						.println(HttpRequestException.HTTP_CODE_500_INTERNAL_ERROR);
 			}
@@ -594,6 +604,7 @@ public class HttpRequestHandler implements Runnable {
 		} catch (FileNotFoundException e) {
 			throw new HttpRequestException(404);
 		} catch (IOException e) {
+			e.getStackTrace();
 			throw new HttpRequestException(500);
 		} catch (Exception e) {
 			throw new HttpRequestException(404);
