@@ -16,8 +16,6 @@ public class Downloader implements Runnable {
 
 	private SynchronizedQueue<String> URLtoDownload;
 	private SynchronizedQueue<AnalyzerQueueObject> HTMLtoAnalyze;
-	private DataOutputStream outputStream;
-	private Socket socket;
 	private HttpGetRequest currentRequest;
 
 	HashMap<String, Statistics> domainMap;
@@ -29,10 +27,11 @@ public class Downloader implements Runnable {
 	int imgSizeCounter = 0;
 
 	private static String[] supportedVideoFormat = { "mov", "flv", "swf",
-			"mkv", "avi", "mpg", "mp4", "wmv" };
-	private static String[] supportedImageFormat = { "jpg", "png", "bmp", "gif" , "ico"};
+		"mkv", "avi", "mpg", "mp4", "wmv" };
+	private static String[] supportedImageFormat = { "jpg", "png", "bmp",
+		"gif", "ico" };
 	private static String[] supportedDocFormat = { "pdf", "doc", "docx", "xls",
-			"xlsx", "ppt", "pptx" };
+		"xlsx", "ppt", "pptx" };
 
 	public Downloader(SynchronizedQueue<String> url,
 			SynchronizedQueue<AnalyzerQueueObject> analyzerQueue,
@@ -51,17 +50,20 @@ public class Downloader implements Runnable {
 		System.out.println(new Date() + "Download starts");
 		String currURL;
 
-		while ((currURL = URLtoDownload.dequeue()) != null) {
-			System.out.println(Thread.currentThread().getName() + " " + "before increment Downloader");
+		while ((currURL = URLtoDownload.dequeue()) != null) {			
+			System.out.println(Thread.currentThread().getName() + " "
+					+ "before increment Downloader");
 			c1object.increment();
 			// get page
 			// TODO: insert result to HTML queue
-			System.out.println(Thread.currentThread().getName() + " " + Msgs.printMsg(Msgs.DOWNLOADER_INFO, currURL));
+			System.out.println(Thread.currentThread().getName() + " "
+					+ Msgs.printMsg(Msgs.DOWNLOADER_INFO, currURL));
 			String result;
 
 			try {
 				result = java.net.URLDecoder.decode(currURL, "UTF-8");
-				System.out.println(Thread.currentThread().getName() + " " + "URL afetr decode is: " + result);
+				System.out.println(Thread.currentThread().getName() + " "
+						+ "URL afetr decode is: " + result);
 				// if(result.startsWith("https")){
 				// System.out.println("HTTPS is unsupported.");
 				// continue;
@@ -79,112 +81,209 @@ public class Downloader implements Runnable {
 						relativePath = relativePath + "/" + levels[i];
 					}
 				}
-				if(domainHost.contains(":")){
+				if (domainHost.contains(":")) {
 					String[] temp = domainHost.split(":");
 					domainHost = temp[0];
 					crawlPort = Integer.valueOf(temp[1]);
 				}
-				
-				System.out.println("************" +"url host is " + domainHost + "port " + crawlPort + " path is" + relativePath);
-				System.out.println(Thread.currentThread().getName() + " " + "Domain Host is: " + domainHost);
-				System.out.println(Thread.currentThread().getName() + " " + "Relative path is: " + relativePath);
+
+				System.out.println("************" + "url host is " + domainHost
+						+ "port " + crawlPort + " path is" + relativePath);
+				System.out.println(Thread.currentThread().getName() + " "
+						+ "Domain Host is: " + domainHost);
+				System.out.println(Thread.currentThread().getName() + " "
+						+ "Relative path is: " + relativePath);
 				if (isImage(relativePath) || isVideo(relativePath)
 						|| isDoc(relativePath)) {
-					System.out.println(Thread.currentThread().getName() + " " + "media file");
-					HttpHeadRequest currentHeadRequest = new HttpHeadRequest(domainHost);
-					String reqAsString = currentHeadRequest.generateHeadRequestAsString(relativePath);
-					System.out.println(Thread.currentThread().getName() + " " + "----This is HEAD Request----");
-					System.out.println(Thread.currentThread().getName() + " " + reqAsString);
-					socket = new Socket();
-					socket.connect(new InetSocketAddress(domainHost, crawlPort), 1000);
+					System.out.println(Thread.currentThread().getName() + " "
+							+ "media file");
+					HttpHeadRequest currentHeadRequest = new HttpHeadRequest(
+							domainHost);
+					String reqAsString = currentHeadRequest
+							.generateHeadRequestAsString(relativePath);
+					System.out.println(Thread.currentThread().getName() + " "
+							+ "----This is HEAD Request----");
+					System.out.println(Thread.currentThread().getName() + " "
+							+ reqAsString);
+					Socket socket = new Socket();
+					socket.connect(
+							new InetSocketAddress(domainHost, crawlPort), 1000);
 					while (socket.isConnected() == false) {
-						//TODO: enter timeout to make sure it quits sometime...
+						// TODO: enter timeout to make sure it quits sometime...
 					}
 
-					this.outputStream = new DataOutputStream(socket.getOutputStream());
+					DataOutputStream outputStream = new DataOutputStream(
+							socket.getOutputStream());
 					outputStream.write(reqAsString.getBytes());
 
-					BufferedReader rd = new BufferedReader(new InputStreamReader(
-							socket.getInputStream()));
-//					ByteStringInputStream rd = new ByteStringInputStream(socket.getInputStream());
+					BufferedReader rd = new BufferedReader(
+							new InputStreamReader(socket.getInputStream()));
+					// ByteStringInputStream rd = new
+					// ByteStringInputStream(socket.getInputStream());
 					String line;
 					String urlSrcToAnalyze = "";
-					System.out.println(Thread.currentThread().getName() + " " + "before read response");
+					System.out.println(Thread.currentThread().getName() + " "
+							+ "before read response");
 					try {
 						socket.setSoTimeout(5000);
 						while ((line = rd.readLine()) != null) {
-							System.out.println(Thread.currentThread().getName() +  " " + line);
+							// while ((line = rd.readOneLine()) != null) {
+							System.out.println(Thread.currentThread().getName()
+									+ " " + line);
+							if (line.isEmpty())
+								break;
 							urlSrcToAnalyze += line + "\r\n";
+							// urlSrcToAnalyze += line;
 						}
 						socket.close();
-						System.out.println(Thread.currentThread().getName() + " " + new Date() + " Enqueue Analyzer1");
+						System.out.println(Thread.currentThread().getName()
+								+ " " + new Date() + " Enqueue Analyzer1");
 						HTMLtoAnalyze.enqueue(new AnalyzerQueueObject(result,
-								domainHost,crawlPort, urlSrcToAnalyze, new Date()));
+								domainHost, crawlPort, urlSrcToAnalyze,
+								new Date()));
 					} catch (SocketTimeoutException e) {
-						System.out.println(Thread.currentThread().getName() + " " + "Socket time out! (Expected:)");
-						System.out.println(Thread.currentThread().getName() + " " + new Date() + " Enqueue Analyzer2");
+						System.out.println(Thread.currentThread().getName()
+								+ " " + "Socket time out! (Expected:)");
+						System.out.println(Thread.currentThread().getName()
+								+ " " + new Date() + " Enqueue Analyzer2");
 						HTMLtoAnalyze.enqueue(new AnalyzerQueueObject(result,
-								domainHost,crawlPort, urlSrcToAnalyze, new Date()));
-					} catch (SocketException e){
-						System.out.println(Thread.currentThread().getName() + " " + "Socket expcetion in here");
+								domainHost, crawlPort, urlSrcToAnalyze,
+								new Date()));
+					} catch (SocketException e) {
+						System.out.println(Thread.currentThread().getName()
+								+ " " + "Socket expcetion in here");
 						e.getStackTrace();
 					} catch (Exception e) {
-						System.out.println(Thread.currentThread().getName() + " " + "failed to download " + result);
+						System.out.println(Thread.currentThread().getName()
+								+ " " + "failed to download " + result);
 						e.printStackTrace();
 					}
-				}
-				else {
+				} else {
 					this.currentRequest = new HttpGetRequest(domainHost);
-					String reqAsString = currentRequest.generateGetRequestAsString(relativePath);
-					System.out.println(Thread.currentThread().getName() + " " + "----This is Get Request----");
-					System.out.println(Thread.currentThread().getName() + " " + reqAsString);
+					String reqAsString = currentRequest
+							.generateGetRequestAsString(relativePath);
+					System.out.println(Thread.currentThread().getName() + " "
+							+ "----This is Get Request----");
+					System.out.println(Thread.currentThread().getName() + " "
+							+ reqAsString);
 
-					socket = new Socket();
-					socket.connect(new InetSocketAddress(domainHost, crawlPort), 1000);
+					Socket socket = new Socket();
+					socket.connect(
+							new InetSocketAddress(domainHost, crawlPort), 1000);
 					while (socket.isConnected() == false) {
-						//TODO: enter timeout to make sure it quits sometime...
+						// TODO: enter timeout to make sure it quits sometime...
 					}
 
-					this.outputStream = new DataOutputStream(socket.getOutputStream());
+					
+					DataOutputStream outputStream = new DataOutputStream(
+							socket.getOutputStream());
 					outputStream.write(reqAsString.getBytes());
-
-					BufferedReader rd = new BufferedReader(new InputStreamReader(
-							socket.getInputStream()));
-//					ByteStringInputStream rd = new ByteStringInputStream(socket.getInputStream());
-					String line;
+					outputStream.flush();
+					
+					BufferedReader rd = new BufferedReader(
+							new InputStreamReader(socket.getInputStream()));
+					while (rd.ready() == false) {}
+					// ByteStringInputStream rd = new
+					// ByteStringInputStream(socket.getInputStream());
+					String line = null;
+					int readResult = -1;
 					String urlSrcToAnalyze = "";
-					System.out.println(Thread.currentThread().getName() + " " + "before read response");
+					String headersToAnalyze = "";
+					StringBuilder sb = new StringBuilder();
+					System.out.println(Thread.currentThread().getName() + " "
+							+ "before read response");
+					int lengthToRead = -1;
+					int readingCounter = 0;
+					boolean isChunked = false;
 					try {
 						socket.setSoTimeout(5000);
+
 						while ((line = rd.readLine()) != null) {
-							System.out.println(Thread.currentThread().getName() +  " " + line);
-							urlSrcToAnalyze += line + "\r\n";
+							System.out.println("READING RESPONSE");
+							// while ((line = rd.readOneLine()) != null) {
+							System.out.println(Thread.currentThread().getName()
+									+ " " + line);
+							if (line.isEmpty())
+								break;
+							String[] args = line.split(": ");
+							if (args.length > 1) {
+								if (args[0].equalsIgnoreCase("content-length")) {
+									lengthToRead = Integer.parseInt(args[1]);
+								} else if (args[0]
+										.equalsIgnoreCase("Transfer-Encoding")) {
+									System.out.println(args[1].length() + " " + args[1]);
+									if (args[1].equalsIgnoreCase("chunked")) {
+										isChunked = true;
+									}
+								}
+							}
+							headersToAnalyze += line + "\r\n";
+							//							 urlSrcToAnalyze += line;
+
 						}
+						if(isChunked){
+							line = rd.readLine();
+							System.out.println("if chunked this is line: " + line);
+							lengthToRead = Integer.parseInt(line, 16);
+							System.out.println("after changing from hex to int " + lengthToRead);
+							sb.append(line + "\r\n");
+						}
+
+						while (readingCounter < lengthToRead) {
+							readResult = rd.read();
+							if (readResult == -1){
+								break;
+							} else {
+								sb.append(Character
+										.toString((char) readResult));
+								readingCounter++;
+							}
+							if(isChunked && readingCounter == lengthToRead){
+								readingCounter = 0;
+								rd.read(); // '\r'
+								rd.read(); // '\n'
+								line = rd.readLine();
+								System.out.println("LOOP CHUNKED COUNTER UPDATE " + line);
+								lengthToRead = Integer.parseInt(line, 16);
+								sb.append( "\r\n" + line + "\r\n");
+							}
+						}
+						System.out.println("this is sb " +sb.toString() + " sb length is " + sb.toString().length());
+						System.out.println("after sb");
+						urlSrcToAnalyze = headersToAnalyze + "\r\n" + sb.toString();
 						socket.close();
-						System.out.println(Thread.currentThread().getName() + " " + new Date() + " Enqueue Analyzer1");
+						System.out.println(Thread.currentThread().getName()
+								+ " " + new Date() + " Enqueue Analyzer1");
 						HTMLtoAnalyze.enqueue(new AnalyzerQueueObject(result,
-								domainHost,crawlPort, urlSrcToAnalyze, new Date()));
+								domainHost, crawlPort, urlSrcToAnalyze,
+								new Date()));
 					} catch (SocketTimeoutException e) {
-						System.out.println(Thread.currentThread().getName() + " " + "Socket time out! (Expected:)");
-						System.out.println(Thread.currentThread().getName() + " " + new Date() + " Enqueue Analyzer2");
+						System.out.println(Thread.currentThread().getName()
+								+ " " + "Socket time out! (Expected:)");
+						System.out.println(Thread.currentThread().getName()
+								+ " " + new Date() + " Enqueue Analyzer2");
 						HTMLtoAnalyze.enqueue(new AnalyzerQueueObject(result,
-								domainHost,crawlPort, urlSrcToAnalyze, new Date()));
-					} catch(SocketException e){
-						System.out.println(Thread.currentThread().getName() + " " + "Socket Exception");
+								domainHost, crawlPort, urlSrcToAnalyze,
+								new Date()));
+					} catch (SocketException e) {
+						System.out.println(Thread.currentThread().getName()
+								+ " " + "Socket Exception");
 						e.printStackTrace();
 					} catch (Exception e) {
-						System.out.println(Thread.currentThread().getName() + " " + "failed to download " + result);
+						System.out.println(Thread.currentThread().getName()
+								+ " " + "failed to download " + result);
 						e.printStackTrace();
 					}
-					
-				
-				} 
 
-			} catch(Exception e){
-				System.out.println(Thread.currentThread().getName() + " Exception!!!");
+				}
+
+			} catch (Exception e) {
+				System.out.println(Thread.currentThread().getName()
+						+ " Exception!!!");
 				e.printStackTrace();
 			}
-			System.out.println(Thread.currentThread().getName() + " " + "decrement downloader");
+			System.out.println(Thread.currentThread().getName() + " "
+					+ "decrement downloader");
 			c1object.decrement();
 		}
 	}
@@ -196,8 +295,9 @@ public class Downloader implements Runnable {
 		if (path == null) {
 			return false;
 		}
-		
-		return path.equalsIgnoreCase("html") || path.equalsIgnoreCase("htm") || path.equals("");
+
+		return path.equalsIgnoreCase("html") || path.equalsIgnoreCase("htm")
+				|| path.equals("");
 	}
 
 	/***
@@ -209,8 +309,8 @@ public class Downloader implements Runnable {
 			return false;
 		} else {
 			for (int i = 0; i < supportedImageFormat.length; i++) {
-				if(path.endsWith(supportedImageFormat[i]))
-				isValidImgFormat = true;
+				if (path.endsWith(supportedImageFormat[i]))
+					isValidImgFormat = true;
 			}
 			return isValidImgFormat;
 		}
@@ -225,7 +325,7 @@ public class Downloader implements Runnable {
 			return false;
 		} else {
 			for (int i = 0; i < supportedVideoFormat.length; i++) {
-				if(path.endsWith(supportedVideoFormat[i]))
+				if (path.endsWith(supportedVideoFormat[i]))
 					isValidVideoFormat = true;
 			}
 			return isValidVideoFormat;
@@ -241,7 +341,7 @@ public class Downloader implements Runnable {
 			return false;
 		} else {
 			for (int i = 0; i < supportedDocFormat.length; i++) {
-				if(path.endsWith(supportedDocFormat[i]))
+				if (path.endsWith(supportedDocFormat[i]))
 					isValidDocFormat = true;
 			}
 			return isValidDocFormat;

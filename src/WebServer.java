@@ -4,6 +4,7 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.util.ArrayList;
 import java.util.HashMap;
 
 
@@ -21,6 +22,11 @@ public class WebServer {
 	private String rootDir;
 	private String defaultPage;
 	private int maxThread;
+	private int maxDownloaders;
+	private int maxAnalyzers;
+	private ArrayList<String> imagesExtensions;
+	private ArrayList<String> videoExtensions;
+	private ArrayList<String> documentExtensions;
 	SynchronizedQueue<String> downloaderQueue;
 	SynchronizedQueue<AnalyzerQueueObject> analyzerQueue;
 	class1 c1object;
@@ -29,10 +35,14 @@ public class WebServer {
 	Analyzer analyzer;
 	
 	HashMap<String, Statistics> domainMap;
+
 	
 	public WebServer(){
 		this.c1object = new class1();
 //		this.downloaderQueue = new SynchronizedQueue<>(10000, c1object);
+		imagesExtensions = new ArrayList<>();
+		videoExtensions = new ArrayList<>();
+		documentExtensions = new ArrayList<>();
 		this.downloaderQueue = new SynchronizedQueue<>(10000);
 		this.analyzerQueue = new SynchronizedQueue<>(10000);
 		domainMap = new HashMap<>();
@@ -223,6 +233,48 @@ public class WebServer {
 			case MAXTHREADS:
 				this.maxThread = Integer.parseInt(lineArgs[1]);
 				break;
+			case MAXDOWNLOADER:
+				this.maxDownloaders = Integer.parseInt(lineArgs[1]);
+				break;
+			case MAXANALYZERS:
+				this.maxAnalyzers = Integer.parseInt(lineArgs[1]);
+				break;
+			case IMAGEEXTENSIONS:
+				String[] temp = lineArgs[1].split(",");
+				for (String img : temp) {
+					if(img.startsWith("\"")){
+						imagesExtensions.add(img.substring(1));
+					}
+					else if(img.endsWith("\"")){
+						imagesExtensions.add(img.substring(0,img.length()-1));
+					}
+					else imagesExtensions.add(img);
+				}
+				break;
+			case VIDEOEXTENSIONS:
+				String[] tempV = lineArgs[1].split(",");
+				for (String img : tempV) {
+					if(img.startsWith("\"")){
+						videoExtensions.add(img.substring(1));
+					}
+					else if(img.endsWith("\"")){
+						videoExtensions.add(img.substring(0,img.length()-1));
+					}
+					else videoExtensions.add(img);
+				}
+				break;
+			case DOCUMENTEXTENSIONS:
+				String[] tempD = lineArgs[1].split(",");
+				for (String img : tempD) {
+					if(img.startsWith("\"")){
+						documentExtensions.add(img.substring(1));
+					}
+					else if(img.endsWith("\"")){
+						documentExtensions.add(img.substring(0,img.length()-1));
+					}
+					else documentExtensions.add(img);
+				}
+				break;
 			default:
 				throw new IllegalArgumentException("Tag: " + tag.toString()
 						+ " has no implementation");
@@ -230,6 +282,19 @@ public class WebServer {
 		}
 	}
 	
+	public ArrayList<String> getImagesExtensions() {
+		return imagesExtensions;
+	}
+
+	public ArrayList<String> getVideoExtensions() {
+		return videoExtensions;
+	}
+
+	public ArrayList<String> getDocumentExtensions() {
+		return documentExtensions;
+	}
+
+
 	/**
 	 * Read from config file into a stringbuilder.
 	 * 

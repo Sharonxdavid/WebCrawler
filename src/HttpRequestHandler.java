@@ -305,15 +305,15 @@ public class HttpRequestHandler implements Runnable {
 					startPortScan(crawlUrl);
 				}
 
-				if (robotScan == null || robotScan.equals("off")){
-					RobotRules rr = RobotRules.loadRobotsTxt(crawlUrl, 80);
-				}
+//				if (robotScan == null || robotScan.equals("off")){
+//					RobotRules rr = RobotRules.loadRobotsTxt(crawlUrl, 80);
+//				}
 
 				domainMap.put(tempCrawlUrl, new Statistics());
 				domainMap.get(tempCrawlUrl).map.put("Domain Name", tempCrawlUrl);
 //				crawlUrl = tempCrawlUrl;
 				
-//				downloaderQueue.enqueue(tempCrawlUrl);TODO: TODO TODO TODO TODO TODO TODO TODO TODO TODO
+				downloaderQueue.enqueue(tempCrawlUrl);//TODO: TODO TODO TODO TODO TODO TODO TODO TODO TODO
 				ExecResListener execRes = new ExecResListener(this.downloaderQueue,this.analyzerQueue,domainMap, domainMap.get(tempCrawlUrl).map.get("Domain Name"), c1object);
 
 				Thread execResThread = new Thread(execRes);

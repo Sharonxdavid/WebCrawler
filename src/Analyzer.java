@@ -80,7 +80,7 @@ public class Analyzer implements Runnable {
 					domainMap.get(currData.host).addToKey("Total video size",String.valueOf(currData.ContentLength));
 				}
 				// if doc
-				else if (currData.ContentType.endsWith(".pdf")
+				else if (currData.url.endsWith(".pdf")
 						|| currData.url.endsWith(".doc")
 						|| currData.url.endsWith(".docx")
 						|| currData.url.endsWith(".ppt")

@@ -1,7 +1,7 @@
 
 public enum ConfigFileValues {
-	PORT, ROOT, DEFAULTPAGE, MAXTHREADS;
-
+	PORT, ROOT, DEFAULTPAGE, MAXTHREADS, MAXDOWNLOADER, MAXANALYZERS, IMAGEEXTENSIONS, VIDEOEXTENSIONS, DOCUMENTEXTENSIONS;
+	
 	/**
 	 * Match the tag from the config file to one of the possible tags
 	 * 
