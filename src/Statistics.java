@@ -8,12 +8,14 @@ public class Statistics {
 	ArrayList<String> visitedImg;
 	ArrayList<String> visited;
 	ArrayList<String> externalLink;
+	ArrayList<Long> rtt;
 	
 	public Statistics() {
 		visitedImg = new ArrayList<>();
 		visitedURL = new ArrayList<>();
 		visited = new ArrayList<>();
 		externalLink = new ArrayList<>();
+		rtt = new ArrayList<>();
 		map = new HashMap<>();
 		map.put("Domain Name", "");
 		map.put("# of imgs", "0");

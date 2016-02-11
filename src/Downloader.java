@@ -123,7 +123,9 @@ public class Downloader implements Runnable {
 						
 					}
 					long endTime = new Date().getTime();
-
+					long diff = endTime - startTime;
+					System.out.println("TIME DIFFERENCE " + (endTime - startTime));
+					domainMap.get(c1object.initialDomain).rtt.add(diff);
 					
 					// ByteStringInputStream rd = new
 					// ByteStringInputStream(socket.getInputStream());
@@ -181,19 +183,26 @@ public class Downloader implements Runnable {
 						// TODO: enter timeout to make sure it quits sometime...
 					}
 
+					BufferedReader rd = new BufferedReader(
+							new InputStreamReader(socket.getInputStream()));
 					
 					DataOutputStream outputStream = new DataOutputStream(
 							socket.getOutputStream());
 					outputStream.write(reqAsString.getBytes());
-					String startTime = sdf.format(new Date()).substring(9);
-					String endTime;
 					outputStream.flush();
 					
-					BufferedReader rd = new BufferedReader(
-							new InputStreamReader(socket.getInputStream()));
-					while (rd.ready() == false) {}
-					// ByteStringInputStream rd = new
-					// ByteStringInputStream(socket.getInputStream());
+					long startTime = new Date().getTime();
+					outputStream.write(reqAsString.getBytes());
+					outputStream.flush();
+					while(rd.ready() == false){
+						
+					}
+					long endTime = new Date().getTime();
+					System.out.println("TIME DIFFERENCE " + (endTime - startTime));
+					long diff = endTime - startTime;
+					domainMap.get(c1object.initialDomain).rtt.add(diff);
+//					while (rd.ready() == false) {}
+					
 					String line = null;
 					int readResult = -1;
 					String urlSrcToAnalyze = "";
@@ -206,7 +215,6 @@ public class Downloader implements Runnable {
 					boolean isChunked = false;
 					try {
 						socket.setSoTimeout(5000);
-						endTime = sdf.format(new Date()).substring(9);
 						while ((line = rd.readLine()) != null) {
 							System.out.println("READING RESPONSE");
 							// while ((line = rd.readOneLine()) != null) {
