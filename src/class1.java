@@ -2,6 +2,7 @@ import java.lang.reflect.Array;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.regex.Pattern;
 
 public class class1 {
 
@@ -17,8 +18,8 @@ public class class1 {
 	String rootPath;
 	String startCrawlDateTime;
 	
-	ArrayList<String> allow = new ArrayList<>();
-	ArrayList<String> disallow = new ArrayList<>();
+	ArrayList<RobotRule> allow = new ArrayList<>();
+	ArrayList<RobotRule> disallow = new ArrayList<>();
 	
 	boolean respectRobots;
 	boolean portScan;

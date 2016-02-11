@@ -8,9 +8,11 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.net.SocketTimeoutException;
+import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
@@ -360,6 +362,13 @@ public class HttpRequestHandler implements Runnable {
 				String tempCrawlUrl = "";
 				int crawlPort = 80;
 				tempCrawlUrl = java.net.URLDecoder.decode(crawlUrl, "UTF-8");
+				try{
+					InetAddress.getByName(tempCrawlUrl);
+				}
+				catch(UnknownHostException e){
+				System.out.println("Unknwon host!");
+					throw new UnknownHostException();
+				}
 				if (!domainMap.containsKey(tempCrawlUrl)) {
 					c1object.setInitialDomain(tempCrawlUrl);
 					c1object.initDateTime();
@@ -373,7 +382,8 @@ public class HttpRequestHandler implements Runnable {
 							tempCrawlUrl);
 
 					if (robotScan == null || robotScan.equals("off")) {
-						RobotRules rr = RobotRules.loadRobotsTxt(crawlUrl, 80);
+						RobotRules rr = new RobotRules();
+						rr.loadRobotsTxt(crawlUrl, 80);
 						System.out.println("PRINTING RR ALLOW LIST " + rr.allowed);
 						System.out.println("PRINTING RR DISALLOW LIST " + rr.disallowed);
 						c1object.allow = rr.allowed;

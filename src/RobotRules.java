@@ -6,25 +6,24 @@ import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.net.SocketTimeoutException;
 import java.util.ArrayList;
+import java.util.regex.Pattern;
 
 
 public class RobotRules {
-	
-	ArrayList<String> disallowed; 
-	ArrayList<String> allowed;
+	ArrayList<RobotRule> disallowed; 
+	ArrayList<RobotRule> allowed;
 	
 	public RobotRules(){
 		this.disallowed = new ArrayList<>();
 		this.allowed =  new ArrayList<>();
 	}
 	
-	public void addToDisallowed(String s) {
-		this.disallowed.add(s);
+	public void addToDisallowed(RobotRule r) {
+		this.disallowed.add(r);
 	}
-	public void addToAllowed(String s) {
-		this.allowed.add(s);
+	public void addToAllowed(RobotRule r) {
+		this.allowed.add(r);
 	}
-	
 	
 	public boolean isAllowedToDownload(String urlToDownload) {
 		boolean res = true;
@@ -44,8 +43,7 @@ public class RobotRules {
 	}
 	
 
-	public static RobotRules loadRobotsTxt(String crawlUrl, int crawlPort) {
-		// TODO Auto-generated method stub
+	public void loadRobotsTxt(String crawlUrl, int crawlPort) {
 		System.out.println("Starting loadRobotsTxt for the Domain");
 		System.out.println("Starting loadRobotsTxt for the Domain");
 		String relativePath= "/robots.txt";
@@ -97,11 +95,11 @@ public class RobotRules {
 			System.out.println("Exception in the get response :-( ");
 			e.printStackTrace();
 		}
-		robotRules = parseRobotsTxt(urlSrcToAnalyze);
-		return robotRules;
+		parseRobotsTxt(urlSrcToAnalyze);
+//		return robotRules;
 	}
 
-	private static RobotRules parseRobotsTxt(String ruleList) {
+	private  void parseRobotsTxt(String ruleList) {
 		// TODO Auto-generated method stub
 		String myUserAgent = "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/47.0.2526.111 Safari/537.36";
 	
@@ -110,12 +108,11 @@ public class RobotRules {
 		String firstLine = reqAsLines[0];
 		String[] firstLineArgs = firstLine.split(" ");
 		int i = 0;
-		RobotRules robotRules = null;
 		
 		// parse status code, return if not 200
 		if (!firstLineArgs[2].equals("OK")) {
 			System.out.println("Http response code: "+ firstLineArgs[1] +" "+ firstLineArgs[2] + ". Return with out parsing robots.txt // Robot tesxt not found");
-			return robotRules; //No robots text
+//			return robotRules; //No robots text
 		}
 
 
@@ -134,7 +131,8 @@ public class RobotRules {
 				if (key.equalsIgnoreCase("User-agent") ) {
 					if (value.equals("*")){
 						System.out.println("Our user agent matches this useragent rule!");
-						robotRules = aggregateRules(i,reqAsLines);
+//						robotRules = aggregateRules(i,reqAsLines);
+						aggregateRules(i+1,reqAsLines);
 					}
 				}
 			}catch(Exception e)
@@ -143,26 +141,34 @@ public class RobotRules {
 				e.printStackTrace();
 			}
 		}
-		return robotRules;
+//		return robotRules;
 	}
 
-	private static RobotRules aggregateRules(int j, String[] reqAsLines) {
-		RobotRules rr = new RobotRules();
+	private  void aggregateRules(int j, String[] reqAsLines) {
+//		RobotRules rr = new RobotRules();
 
 		for(int i = j; i < reqAsLines.length; i++){
 			String[] headerArgs = reqAsLines[i].split(": ");
 			
 			//not sure if this is needed or not
-//			if(headerArgs.length == 1 ){
-//				continue;
-//			}
+			if(headerArgs.length == 1 ){
+				break;
+			}
 			String key = headerArgs[0];
 			String value = headerArgs[1];
+			
+			value = value.replace("/", "\\/");
+			value = value.replace("-", "\\-");
+			value = value.replace(".", "\\.");
+			value = value.replace("*", ".*");
+			RobotRule robotRule = new RobotRule(Pattern.compile(value), value);
 			if(key.equals("Disallow")){
-				rr.addToDisallowed(value);
+				addToDisallowed(robotRule);
 				System.out.println("disallow " + value);
 			} else if (key.equals("Allow")) {
-				rr.addToAllowed(value);
+				addToAllowed(robotRule);
+				// Disallow: /*?
+				// /asdasda?
 				System.out.println("allow " + value);
 			} else {
 				// No more rules.
@@ -170,7 +176,7 @@ public class RobotRules {
 			}
 			
 		}
-		return rr;
+//		return rr;
 		
 	}
 

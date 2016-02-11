@@ -217,22 +217,49 @@ public class Analyzer implements Runnable {
 			System.out.println("NEXT URL IS " + nextUrl);
 			if (!domainMap.get(host).visited.contains(nextUrl)) {
 				if (respectRobots) {
-					if (c1object.disallow.contains(nextUrl)) {
-						continue;
-					} else if (c1object.allow.contains(nextUrl)) {
-						URLtoDownload.enqueue(nextUrl);
+					int disallowLength = isDisallowed(nextUrl);
+					if (disallowLength > 0) {
+						
+						int allowLength = isAllowed(nextUrl);
+						if (allowLength > disallowLength) {
+							// The link is allowed.
+							URLtoDownload.enqueue(nextUrl);
+						}
 					} else {
+						// disallowLength == 0
 						URLtoDownload.enqueue(nextUrl);
+
 					}
 				} else {
 					URLtoDownload.enqueue(nextUrl);
 				}
-
 			}
 		}
 		domainMap.get(host).addToKey("# of urls", String.valueOf(urlCounter));
 	}
 
+	private int isDisallowed(String nextUrl) {
+		int maxLength = 0;
+		for (RobotRule r : c1object.disallow) {
+			Matcher m = r.pattern.matcher(nextUrl);
+			if (m.find() && r.originalValue.length() > maxLength) {
+				maxLength = r.originalValue.length();
+			}
+		}
+		return maxLength;
+	}
+	
+	private int isAllowed(String nextUrl) {
+		int maxLength = 0;
+		for (RobotRule r : c1object.allow) {
+			Matcher m = r.pattern.matcher(nextUrl);
+			if (m.find() && r.originalValue.length() > maxLength) {
+				maxLength = r.originalValue.length();
+			}
+		}
+		return maxLength;
+	}
+	
 	private void crawlImgs(String currPage, String host, String url,
 			int crawlPort) {
 		imgCounter = 0;
@@ -289,12 +316,18 @@ public class Analyzer implements Runnable {
 			System.out.println("NEXT URL IS " + nextImg);
 			if (!domainMap.get(host).visited.contains(nextImg)) {
 				if (respectRobots) {
-					if (c1object.disallow.contains(nextImg)) {
-						continue;
-					} else if (c1object.allow.contains(nextImg)) {
-						URLtoDownload.enqueue(nextImg);
+					int disallowLength = isDisallowed(nextImg);
+					if (disallowLength > 0) {
+						
+						int allowLength = isAllowed(nextImg);
+						if (allowLength > disallowLength) {
+							// The link is allowed.
+							URLtoDownload.enqueue(nextImg);
+						}
 					} else {
+						// disallowLength == 0
 						URLtoDownload.enqueue(nextImg);
+
 					}
 				} else {
 					URLtoDownload.enqueue(nextImg);
