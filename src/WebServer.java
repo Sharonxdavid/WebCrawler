@@ -38,7 +38,7 @@ public class WebServer {
 	
 	public WebServer(){
 		this.c1object = new class1();
-//		this.downloaderQueue = new SynchronizedQueue<>(10000, c1object);
+
 		this.downloaderQueue = new SynchronizedQueue<>(10000);
 		this.analyzerQueue = new SynchronizedQueue<>(10000);
 		this.ports = new SynchronizedQueue<>(1024);
@@ -48,6 +48,7 @@ public class WebServer {
 		//for loop i < 10 t[i] = new thread
 		Thread[] downloaderThreadArray = new Thread[10];
 		Thread[] analyzerThreadArray = new Thread[2];
+
 		
 		for (int i = 0; i < downloaderThreadArray.length; i++) {
 			downloaderThreadArray[i] = new Thread(downloader);
@@ -236,9 +237,11 @@ public class WebServer {
 				this.maxThread = Integer.parseInt(lineArgs[1]);
 				break;
 			case MAXDOWNLOADER:
+				System.out.println(lineArgs[1]);
 				this.maxDownloaders = Integer.parseInt(lineArgs[1]);
 				break;
 			case MAXANALYZERS:
+				System.out.println(lineArgs[1]);
 				this.maxAnalyzers = Integer.parseInt(lineArgs[1]);
 				break;
 			case IMAGEEXTENSIONS:

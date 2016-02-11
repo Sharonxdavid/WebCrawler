@@ -4,6 +4,7 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map.Entry;
@@ -34,9 +35,7 @@ public class ExecResListener implements Runnable {
 	@Override
 	public void run() {
 		System.out.println("---Started ExecResListener---");
-		System.out.println("---Started ExecResListener---");
 		while (true) {
-
 			if (c1object.isDone(downloaderQueue, analyzerQueue)) {
 				break;
 			} else {
@@ -46,12 +45,9 @@ public class ExecResListener implements Runnable {
 					// TODO Auto-generated catch block
 					e.printStackTrace();
 				}
-
 			}
 		}
 		try {
-			System.out.println("---Inside ExecResListener---");
-			System.out.println("---Inside ExecResListener---");
 			System.out.println("---Inside ExecResListener---");
 			System.out.println("The Domain here is: "
 					+ this.stats.map.get("Domain Name"));
@@ -61,7 +57,6 @@ public class ExecResListener implements Runnable {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-
 	}
 
 	private String fileNameFormat(String domain) {
@@ -69,20 +64,31 @@ public class ExecResListener implements Runnable {
 		res = domain + "_" + c1object.startCrawlDateTime;
 		return res;
 	}
+	
+	private String calcAvgRtt(ArrayList<Long> times){
+		long counter = 0;
+		for (Long t : times) {
+			counter += t;
+		}
+		long avg = counter/times.size();
+		return String.valueOf(avg);
+	}
 
 	private void createPageStats(HashMap<String, String> params, String domain)
 			throws IOException {
 		System.out.println("DOMAIN IN STATS IS: " + domain);
-		System.out.println("DOMAIN IN STATS IS: " + domain);
-		System.out.println("DOMAIN IN STATS IS: " + domain);
-		System.out.println("DOMAIN IN STATS IS: " + domain);
-		System.out.println("DOMAIN IN STATS IS: " + domain);
-		System.out.println("DOMAIN IN STATS IS: " + domain);
 		System.out.println("---STATS PARAMS--- " + params);
-		// File file = new File(domain + ".html");
-
-		// File file = new File("/serverroot/Crawled/"+fileNameFormat(domain) +
-		// ".html");
+		
+		String avgRtt = calcAvgRtt(this.stats.rtt);
+		params.put("AVG rtt", avgRtt);
+		
+		String robots = Boolean.toString(c1object.respectRobots);
+		params.put("Respect robot.txt", robots);
+		
+		if(c1object.portScan){
+			params.put("Opened Port", c1object.portScanRes.toString());
+		}
+		
 		File file = new File(c1object.rootPath + fileNameFormat(domain)
 				+ ".html");
 		BufferedWriter bw = new BufferedWriter(new FileWriter(file));
@@ -95,27 +101,20 @@ public class ExecResListener implements Runnable {
 		bw.write("<body bgcolor='#A9D0F5'>");
 		bw.write("<iframe src=\"http://free.timeanddate.com/clock/i4za5yzk/n676/szw110/szh110/hbw0/hfc111/cf100/hgr0/fav0/fiv0/mqcfff/mql15/mqw4/mqd94/mhcfff/mhl15/mhw4/mhd94/hhcbbb/hmcddd/hsceee\" frameborder=\"0\" width=\"110\" height=\"110\" align:\"right\"></iframe>");
 
-		bw.write("<h2>Computer networks 2015/2016</h2>");
-		bw.write("<h3> Tal Bigel, Sharon David </h3>");
-
 		bw.write("<br>");
 
-		bw.write("<h3>" + domain + "</h3>");
+		bw.write("<h3>" + domain + "results" + "</h3>");
 		bw.write("<br>");
 
 		bw.write("<table border = \"1\"");
-		bw.write("<tr>");
-		bw.write("</tr>");
+		bw.write("<tr> </tr>");
 
 		for (Entry<String, String> entry : params.entrySet()) {
-			bw.write("<tr>");
-			bw.write("<td>");
+			bw.write("<tr> <td>");
 			bw.write(entry.getKey());
-			bw.write("</td>");
-			bw.write("<td>");
+			bw.write("</td> <td>");
 			bw.write(entry.getValue());
-			bw.write("</td>");
-			bw.write("</tr>");
+			bw.write("</td> </tr>");
 		}
 
 		bw.write("</table>");
@@ -140,23 +139,20 @@ public class ExecResListener implements Runnable {
 		bw.write("<body bgcolor='#A9D0F5'>");
 		bw.write("<iframe src=\"http://free.timeanddate.com/clock/i4za5yzk/n676/szw110/szh110/hbw0/hfc111/cf100/hgr0/fav0/fiv0/mqcfff/mql15/mqw4/mqd94/mhcfff/mhl15/mhw4/mhd94/hhcbbb/hmcddd/hsceee\" frameborder=\"0\" width=\"110\" height=\"110\" align:\"right\"></iframe>");
 
-		bw.write("<br>");
-		bw.write("<br>");
+		bw.write("<br><br>");
 
 		bw.write("<table border = \"1\"");
 		bw.write("<tr>");
 		bw.write("</tr>");
 
 		for (Entry<String, Statistics> entry : domainMap.entrySet()) {
-			bw.write("<tr>");
-			bw.write("<td>");
+			bw.write("<tr> <td>");
 			bw.write(entry.getKey());
-			bw.write("</td>");
-			bw.write("<td>");
-			bw.write("<a href = "+"\"" + c1object.rootPath  + entry.getKey() + "_"
-					+ c1object.startCrawlDateTime + ".html\">Link to page");
-			bw.write("</td>");
-			bw.write("</tr>");
+			bw.write("</td> <td>");
+			bw.write("<a href = " + "\"" + c1object.rootPath + entry.getKey()
+					+ "_" + c1object.startCrawlDateTime
+					+ ".html\">Link to page");
+			bw.write("</td> </tr>");
 		}
 
 		bw.write("</table>");

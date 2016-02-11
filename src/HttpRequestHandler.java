@@ -385,11 +385,7 @@ public class HttpRequestHandler implements Runnable {
 					
 					if (portScan != null && portScan.equals("on")) {
 						System.out.println("Starting Port Scan Stub");
-						System.out.println("Starting Port Scan Stub");
-						System.out.println("Starting Port Scan Stub");
-						System.out.println("Starting Port Scan Stub");
-						System.out.println("Starting Port Scan Stub");
-						System.out.println("Starting Port Scan Stub");
+						c1object.portScan = true;
 						for (int i = 1; i < 1025; i++) {
 							this.ports.enqueue(i);
 						}
@@ -400,6 +396,7 @@ public class HttpRequestHandler implements Runnable {
 								c1object);
 						scan.start();
 					} else {
+						c1object.portScan = false;
 						downloaderQueue.enqueue(c1object.initialDomain);
 						ExecResListener execRes = new ExecResListener(
 								this.downloaderQueue, this.analyzerQueue,

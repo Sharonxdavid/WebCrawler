@@ -50,7 +50,6 @@ public class Analyzer implements Runnable {
 				continue;
 			} else {
 				// analyze currPage
-				// insert new url to url queue
 				System.out.println(Thread.currentThread().getName()
 						+ "Request content-length: " + currData.ContentLength
 						+ " URL " + currData.url);
@@ -222,8 +221,7 @@ public class Analyzer implements Runnable {
 						continue;
 					} else if (c1object.allow.contains(nextUrl)) {
 						URLtoDownload.enqueue(nextUrl);
-					}
-					else{
+					} else {
 						URLtoDownload.enqueue(nextUrl);
 					}
 				} else {
@@ -295,8 +293,7 @@ public class Analyzer implements Runnable {
 						continue;
 					} else if (c1object.allow.contains(nextImg)) {
 						URLtoDownload.enqueue(nextImg);
-					}
-					else{
+					} else {
 						URLtoDownload.enqueue(nextImg);
 					}
 				} else {
@@ -307,7 +304,5 @@ public class Analyzer implements Runnable {
 		}
 		domainMap.get(host).addToKey("# of imgs", String.valueOf(imgCounter));
 	}
-
-
 
 }

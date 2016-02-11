@@ -29,8 +29,6 @@ public class Statistics {
 		map.put("# of external links", "0");
 		map.put("# of internal links","0");
 		map.put("Respect robot.txt", "");
-		map.put("open ports", "0");
-		map.put("AVG RTT", "0");
 	}
 
 	public synchronized void addToKey(String key, String value) {

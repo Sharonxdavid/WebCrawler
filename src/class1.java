@@ -5,7 +5,7 @@ import java.util.Date;
 
 public class class1 {
 
-	int j = 0;
+	int runningThreadsCounter = 0;
 
 	String initialDomain;
 	
@@ -19,16 +19,18 @@ public class class1 {
 	
 	ArrayList<String> allow = new ArrayList<>();
 	ArrayList<String> disallow = new ArrayList<>();
+	
 	boolean respectRobots;
+	boolean portScan;
 	
 	ArrayList<Integer> portScanRes = new ArrayList<>();
 
 	public synchronized void increment() {
-		j++;
+		runningThreadsCounter++;
 	}
 
 	public synchronized void decrement() {
-		j--;
+		runningThreadsCounter--;
 	}
 
 	public synchronized boolean isDone(
@@ -36,9 +38,9 @@ public class class1 {
 			SynchronizedQueue<AnalyzerQueueObject> analyzerQueue) {
 		String s = "downloaderQ.size =" + downloaderQueue.getSize()
 				+ ", analyzerQ.size =" + analyzerQueue.getSize() + ", j is "
-				+ j;
+				+ runningThreadsCounter;
 		System.out.println(s);
-		return (downloaderQueue.getSize() == 0 && analyzerQueue.getSize() == 0 && j == 0);
+		return (downloaderQueue.getSize() == 0 && analyzerQueue.getSize() == 0 && runningThreadsCounter == 0);
 	}
 	
 	public synchronized boolean isDonePortScan(SynchronizedQueue<Integer> ports){
