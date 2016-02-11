@@ -4,19 +4,25 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.UnsupportedEncodingException;
+import java.io.ObjectInputStream.GetField;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.net.SocketException;
 import java.net.SocketTimeoutException;
 import java.net.UnknownHostException;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
+
+import javax.xml.crypto.dsig.spec.C14NMethodParameterSpec;
 
 public class Downloader implements Runnable {
 
 	private SynchronizedQueue<String> URLtoDownload;
 	private SynchronizedQueue<AnalyzerQueueObject> HTMLtoAnalyze;
 	private HttpGetRequest currentRequest;
+	SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMdd_HHmmss");
 
 	HashMap<String, Statistics> domainMap;
 	class1 c1object;
@@ -25,13 +31,6 @@ public class Downloader implements Runnable {
 	int linksSizeCounter = 0;
 	int numOfImgs = 0;
 	int imgSizeCounter = 0;
-
-	private static String[] supportedVideoFormat = { "mov", "flv", "swf",
-		"mkv", "avi", "mpg", "mp4", "wmv" };
-	private static String[] supportedImageFormat = { "jpg", "png", "bmp",
-		"gif", "ico" };
-	private static String[] supportedDocFormat = { "pdf", "doc", "docx", "xls",
-		"xlsx", "ppt", "pptx" };
 
 	public Downloader(SynchronizedQueue<String> url,
 			SynchronizedQueue<AnalyzerQueueObject> analyzerQueue,
@@ -42,6 +41,7 @@ public class Downloader implements Runnable {
 		this.HTMLtoAnalyze = analyzerQueue;
 		this.HTMLtoAnalyze.registerProducer();
 		this.c1object = c1object;
+
 	}
 
 	@Override
@@ -50,12 +50,11 @@ public class Downloader implements Runnable {
 		System.out.println(new Date() + "Download starts");
 		String currURL;
 
-		while ((currURL = URLtoDownload.dequeue()) != null) {			
+		while ((currURL = URLtoDownload.dequeue()) != null) {
+			
 			System.out.println(Thread.currentThread().getName() + " "
 					+ "before increment Downloader");
 			c1object.increment();
-			// get page
-			// TODO: insert result to HTML queue
 			System.out.println(Thread.currentThread().getName() + " "
 					+ Msgs.printMsg(Msgs.DOWNLOADER_INFO, currURL));
 			String result;
@@ -81,11 +80,11 @@ public class Downloader implements Runnable {
 						relativePath = relativePath + "/" + levels[i];
 					}
 				}
-				if (domainHost.contains(":")) {
-					String[] temp = domainHost.split(":");
-					domainHost = temp[0];
-					crawlPort = Integer.valueOf(temp[1]);
-				}
+//				if (domainHost.contains(":")) {
+//					String[] temp = domainHost.split(":");
+//					domainHost = temp[0];
+//					crawlPort = Integer.valueOf(temp[1]);
+//				}
 
 				System.out.println("************" + "url host is " + domainHost
 						+ "port " + crawlPort + " path is" + relativePath);
@@ -115,6 +114,8 @@ public class Downloader implements Runnable {
 					DataOutputStream outputStream = new DataOutputStream(
 							socket.getOutputStream());
 					outputStream.write(reqAsString.getBytes());
+					long startTime = new Date().getTime();
+					long endTime;
 
 					BufferedReader rd = new BufferedReader(
 							new InputStreamReader(socket.getInputStream()));
@@ -126,6 +127,7 @@ public class Downloader implements Runnable {
 							+ "before read response");
 					try {
 						socket.setSoTimeout(5000);
+						endTime = new Date().getTime();
 						while ((line = rd.readLine()) != null) {
 							// while ((line = rd.readOneLine()) != null) {
 							System.out.println(Thread.currentThread().getName()
@@ -178,6 +180,8 @@ public class Downloader implements Runnable {
 					DataOutputStream outputStream = new DataOutputStream(
 							socket.getOutputStream());
 					outputStream.write(reqAsString.getBytes());
+					String startTime = sdf.format(new Date()).substring(9);
+					String endTime;
 					outputStream.flush();
 					
 					BufferedReader rd = new BufferedReader(
@@ -197,7 +201,7 @@ public class Downloader implements Runnable {
 					boolean isChunked = false;
 					try {
 						socket.setSoTimeout(5000);
-
+						endTime = sdf.format(new Date()).substring(9);
 						while ((line = rd.readLine()) != null) {
 							System.out.println("READING RESPONSE");
 							// while ((line = rd.readOneLine()) != null) {
@@ -300,6 +304,7 @@ public class Downloader implements Runnable {
 				|| path.equals("");
 	}
 
+
 	/***
 	 * Checks if requested URI is an image
 	 */
@@ -308,8 +313,9 @@ public class Downloader implements Runnable {
 		if (path == null) {
 			return false;
 		} else {
-			for (int i = 0; i < supportedImageFormat.length; i++) {
-				if (path.endsWith(supportedImageFormat[i]))
+			ArrayList<String> temp = c1object.getImagesExtensions();
+			for (String type : temp) {
+				if (path.endsWith(type))
 					isValidImgFormat = true;
 			}
 			return isValidImgFormat;
@@ -324,9 +330,10 @@ public class Downloader implements Runnable {
 		if (path == null) {
 			return false;
 		} else {
-			for (int i = 0; i < supportedVideoFormat.length; i++) {
-				if (path.endsWith(supportedVideoFormat[i]))
-					isValidVideoFormat = true;
+			ArrayList<String> temp = c1object.getImagesExtensions();
+			for (String type : temp) {
+				if (path.endsWith(type))
+					return true;
 			}
 			return isValidVideoFormat;
 		}
@@ -340,9 +347,10 @@ public class Downloader implements Runnable {
 		if (path == null) {
 			return false;
 		} else {
-			for (int i = 0; i < supportedDocFormat.length; i++) {
-				if (path.endsWith(supportedDocFormat[i]))
-					isValidDocFormat = true;
+			ArrayList<String> temp = c1object.getImagesExtensions();
+			for (String type : temp) {
+				if (path.endsWith(type))
+					return true;
 			}
 			return isValidDocFormat;
 		}

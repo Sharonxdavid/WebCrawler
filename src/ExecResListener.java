@@ -43,16 +43,17 @@ public class ExecResListener implements Runnable {
 					// TODO Auto-generated catch block
 					e.printStackTrace();
 				}
-				
-				
+
 			}
 		}
 		try {
 			System.out.println("---Inside ExecResListener---");
 			System.out.println("---Inside ExecResListener---");
 			System.out.println("---Inside ExecResListener---");
-			System.out.println("The Domain here is: " + this.stats.map.get("Domain Name"));
+			System.out.println("The Domain here is: "
+					+ this.stats.map.get("Domain Name"));
 			createPageStats(this.stats.map, host);
+			createOldResultsPage();
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -60,14 +61,9 @@ public class ExecResListener implements Runnable {
 
 	}
 
-	public String dateTime() {
-		SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMdd_HHmmss");
-		return sdf.format(new Date());
-	}
-
 	private String fileNameFormat(String domain) {
 		String res;
-		res = domain + "_" + this.dateTime();
+		res = domain + "_" + c1object.startCrawlDateTime;
 		return res;
 	}
 
@@ -80,8 +76,12 @@ public class ExecResListener implements Runnable {
 		System.out.println("DOMAIN IN STATS IS: " + domain);
 		System.out.println("DOMAIN IN STATS IS: " + domain);
 		System.out.println("---STATS PARAMS--- " + params);
-//		File file = new File(domain + ".html");
-		File file = new File(fileNameFormat(domain) + ".html");
+		// File file = new File(domain + ".html");
+
+		// File file = new File("/serverroot/Crawled/"+fileNameFormat(domain) +
+		// ".html");
+		File file = new File(c1object.rootPath + fileNameFormat(domain)
+				+ ".html");
 		BufferedWriter bw = new BufferedWriter(new FileWriter(file));
 
 		bw.write("<!DOCTYPE html>");
@@ -111,6 +111,47 @@ public class ExecResListener implements Runnable {
 			bw.write("</td>");
 			bw.write("<td>");
 			bw.write(entry.getValue());
+			bw.write("</td>");
+			bw.write("</tr>");
+		}
+
+		bw.write("</table>");
+		bw.write("</div>");
+		bw.write("<a href='/index.html' class=\"link\">Back to index</a><br>");
+		bw.write("<a href='/form.html' class=\"link\">Back to form</a>");
+		bw.write("</body>");
+		bw.write("</html>");
+		bw.close();
+
+	}
+
+	private void createOldResultsPage() throws IOException {
+		File file = new File(c1object.rootPath + "old results" + ".html");
+		BufferedWriter bw = new BufferedWriter(new FileWriter(file));
+
+		bw.write("<!DOCTYPE html>");
+
+		bw.write("<head>");
+		// bw.write("<link rel=\"stylesheet\" type=\"text/css\" href=\"style.css\">");
+		bw.write("</head>");
+		bw.write("<body bgcolor='#A9D0F5'>");
+		bw.write("<iframe src=\"http://free.timeanddate.com/clock/i4za5yzk/n676/szw110/szh110/hbw0/hfc111/cf100/hgr0/fav0/fiv0/mqcfff/mql15/mqw4/mqd94/mhcfff/mhl15/mhw4/mhd94/hhcbbb/hmcddd/hsceee\" frameborder=\"0\" width=\"110\" height=\"110\" align:\"right\"></iframe>");
+
+		bw.write("<br>");
+		bw.write("<br>");
+
+		bw.write("<table border = \"1\"");
+		bw.write("<tr>");
+		bw.write("</tr>");
+
+		for (Entry<String, Statistics> entry : domainMap.entrySet()) {
+			bw.write("<tr>");
+			bw.write("<td>");
+			bw.write(entry.getKey());
+			bw.write("</td>");
+			bw.write("<td>");
+			bw.write("<a href = "+"\"" + c1object.rootPath  + entry.getKey() + "_"
+					+ c1object.startCrawlDateTime + ".html\">Link to page");
 			bw.write("</td>");
 			bw.write("</tr>");
 		}

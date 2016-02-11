@@ -24,9 +24,7 @@ public class WebServer {
 	private int maxThread;
 	private int maxDownloaders;
 	private int maxAnalyzers;
-	private ArrayList<String> imagesExtensions;
-	private ArrayList<String> videoExtensions;
-	private ArrayList<String> documentExtensions;
+	
 	SynchronizedQueue<String> downloaderQueue;
 	SynchronizedQueue<AnalyzerQueueObject> analyzerQueue;
 	class1 c1object;
@@ -40,9 +38,6 @@ public class WebServer {
 	public WebServer(){
 		this.c1object = new class1();
 //		this.downloaderQueue = new SynchronizedQueue<>(10000, c1object);
-		imagesExtensions = new ArrayList<>();
-		videoExtensions = new ArrayList<>();
-		documentExtensions = new ArrayList<>();
 		this.downloaderQueue = new SynchronizedQueue<>(10000);
 		this.analyzerQueue = new SynchronizedQueue<>(10000);
 		domainMap = new HashMap<>();
@@ -215,6 +210,9 @@ public class WebServer {
 			}
 			//init class variable by the Config file values.
 			ConfigFileValues tag = ConfigFileValues.matchTag(lineArgs[0]);
+			ArrayList<String> tempArrayList = new ArrayList<>();
+			ArrayList<String> tempArrayList2 = new ArrayList<>();
+			ArrayList<String> tempArrayList3 = new ArrayList<>();
 			switch (tag) {
 			case PORT:
 				this.port = Integer.parseInt(lineArgs[1]);
@@ -229,6 +227,7 @@ public class WebServer {
 				} else {
 					this.rootDir = lineArgs[1];
 				}
+				c1object.rootPath = this.rootDir;
 				break;
 			case MAXTHREADS:
 				this.maxThread = Integer.parseInt(lineArgs[1]);
@@ -243,37 +242,43 @@ public class WebServer {
 				String[] temp = lineArgs[1].split(",");
 				for (String img : temp) {
 					if(img.startsWith("\"")){
-						imagesExtensions.add(img.substring(1));
+						tempArrayList.add(img.substring(1));
 					}
 					else if(img.endsWith("\"")){
-						imagesExtensions.add(img.substring(0,img.length()-1));
+						tempArrayList.add(img.substring(0,img.length()-1));
 					}
-					else imagesExtensions.add(img);
+					else tempArrayList.add(img);
 				}
+				c1object.setImagesExtensions(tempArrayList);
+//				tempArrayList.clear();
 				break;
 			case VIDEOEXTENSIONS:
 				String[] tempV = lineArgs[1].split(",");
 				for (String img : tempV) {
 					if(img.startsWith("\"")){
-						videoExtensions.add(img.substring(1));
+						tempArrayList.add(img.substring(1));
 					}
 					else if(img.endsWith("\"")){
-						videoExtensions.add(img.substring(0,img.length()-1));
+						tempArrayList.add(img.substring(0,img.length()-1));
 					}
-					else videoExtensions.add(img);
+					else tempArrayList.add(img);
 				}
+				c1object.setVideoExtensions(tempArrayList2);
+//				tempArrayList.clear();
 				break;
 			case DOCUMENTEXTENSIONS:
 				String[] tempD = lineArgs[1].split(",");
 				for (String img : tempD) {
 					if(img.startsWith("\"")){
-						documentExtensions.add(img.substring(1));
+						tempArrayList.add(img.substring(1));
 					}
 					else if(img.endsWith("\"")){
-						documentExtensions.add(img.substring(0,img.length()-1));
+						tempArrayList.add(img.substring(0,img.length()-1));
 					}
-					else documentExtensions.add(img);
+					else tempArrayList.add(img);
 				}
+				c1object.setDocumentExtensions(tempArrayList3);
+//				tempArrayList.clear();
 				break;
 			default:
 				throw new IllegalArgumentException("Tag: " + tag.toString()
@@ -281,19 +286,11 @@ public class WebServer {
 			}
 		}
 	}
-	
-	public ArrayList<String> getImagesExtensions() {
-		return imagesExtensions;
-	}
 
-	public ArrayList<String> getVideoExtensions() {
-		return videoExtensions;
-	}
 
-	public ArrayList<String> getDocumentExtensions() {
-		return documentExtensions;
+	public String getRootDir() {
+		return rootDir;
 	}
-
 
 	/**
 	 * Read from config file into a stringbuilder.

@@ -194,16 +194,25 @@ public class HttpRequestHandler implements Runnable {
 			int bodyStartIndex = requestString.indexOf(CRLF + CRLF) + 2 * 2;
 			byte[] pageContent;
 			// create response according to request method.
+//			System.out.println("CURR REQUEST");
+//			System.out.println(currentRequest.requestedPageLocation);
+//			System.out.println(currentRequest.Referer);
+//			System.out.println(currentRequest.methodType);
+//			System.out.println("ISDONE" + c1object.isDone(downloaderQueue, analyzerQueue));
 			if (currentRequest.methodType == HttpMethods.POST) {
 				System.out.println("** handle post ! **");
 				pageContent = handlePostRequest(requestString, bodyStartIndex);
 			} else if (this.currentRequest.methodType == HttpMethods.GET) {
-				// *** testing lab2 *** added if \\form.html store source
-				if (currentRequest.requestedPageLocation.equals("\\"
-						+ "stats.html")) {
-					pageContent = handleGetRequest(requestString);
+				if(currentRequest.requestedPageLocation.equals("crawlform.html")){
+					boolean isDone = c1object.isDone(downloaderQueue, analyzerQueue);
+					pageContent = handleGetCrawlFormRequest(requestString, isDone);
+
 				}
-				if (currentRequest.requestedPageLocation.equals("\\"
+//				if (currentRequest.requestedPageLocation.equals("\\"
+//						+ "stats.html")) {
+//					pageContent = handleGetRequest(requestString);
+//				}
+				else if (currentRequest.requestedPageLocation.equals("\\"
 						+ serverSubmitResponseFileName)) {
 					pageContent = handleGetRequest(requestString);
 				} else {
@@ -264,6 +273,49 @@ public class HttpRequestHandler implements Runnable {
 		}
 	}
 
+	private byte[] handleGetCrawlFormRequest(String requestString, boolean isDone) throws IOException {
+		File file = new File(rootDir + "/crawlform.tmp.html");
+		BufferedWriter bw = new BufferedWriter(new FileWriter(file));
+		getCrawlFormResponseHTMLBody(bw, isDone);
+
+		FileInputStream fileInputStream = new FileInputStream(file);
+		byte[] responseBytes = new byte[(int) file.length()];
+
+		// read until the end of the stream.
+		while (fileInputStream.available() != 0) {
+			fileInputStream.read(responseBytes, 0, responseBytes.length);
+		}
+		fileInputStream.close();
+		return responseBytes;
+	}
+
+	private void getCrawlFormResponseHTMLBody(BufferedWriter bw, boolean isDone) throws IOException {
+
+		bw.write("<!DOCTYPE html>");
+		bw.write("<body>");
+		bw.write("IS DONE IS " + c1object.isDone(downloaderQueue, analyzerQueue));
+		if(isDone){
+			bw.write("<form id=\"form\" method = \"POST\" action = \"execResult.html\">");
+			bw.write("Domain:<br>");
+			bw.write("<input type=\"text\" name=\"Domain\">");
+			bw.write("<br>");
+
+			bw.write("<input type=\"checkbox\" name=\"portscan\" >Perform full TCP port scan<br>");
+			bw.write("<input type=\"checkbox\" name=\"robotscan\" checked=\"on\">Disrespect robots.txt<br>");
+			bw.write("<input type=\"submit\" value=\"Start crawler\">");
+			bw.write("</form>");
+		}
+		 else{
+			 bw.write("Crawler already running...<br>");
+			 bw.write("currently scanning " + c1object.initialDomain);
+		 }
+
+		bw.write("</body>");
+		bw.write("</html>");
+		
+		bw.close();
+	}
+
 	/**
 	 * Handle POST request
 	 * 
@@ -282,7 +334,8 @@ public class HttpRequestHandler implements Runnable {
 					bodyStartIndex + currentRequest.ContentLength);
 		}
 		if (this.currentRequest.requestedPageLocation
-				.equalsIgnoreCase("stats.html")) {
+				.equalsIgnoreCase("execResult.html")) {
+			try{
 			parseParamsFromString(requestBody);
 
 			String crawlUrl = parametersHashMap.get("Domain");
@@ -295,6 +348,8 @@ public class HttpRequestHandler implements Runnable {
 			int crawlPort = 80;
 			tempCrawlUrl = java.net.URLDecoder.decode(crawlUrl, "UTF-8");
 			if(!domainMap.containsKey(tempCrawlUrl)){
+				c1object.setInitialDomain(tempCrawlUrl);
+				c1object.initDateTime();
 				if(tempCrawlUrl.contains(":")){
 					String[] temp = tempCrawlUrl.split(":");
 					crawlUrl = temp[0];
@@ -314,15 +369,19 @@ public class HttpRequestHandler implements Runnable {
 //				crawlUrl = tempCrawlUrl;
 				
 				downloaderQueue.enqueue(tempCrawlUrl);//TODO: TODO TODO TODO TODO TODO TODO TODO TODO TODO
+			
 				ExecResListener execRes = new ExecResListener(this.downloaderQueue,this.analyzerQueue,domainMap, domainMap.get(tempCrawlUrl).map.get("Domain Name"), c1object);
 
 				Thread execResThread = new Thread(execRes);
 				execResThread.start();
 			}
 			System.out.println(new Date() + "HTTP handler, queue size " + downloaderQueue.getSize());
-//			Downloader downloader = new Downloader(downloaderQueue, analyzerQueue);
-//			downloader.run();
-			pageContent = createStatsPostResponseHTML(crawlUrl);
+			pageContent = createStatsPostResponseHTML(crawlUrl, true);
+			}
+			catch (Exception e) {
+				pageContent = createStatsPostResponseHTML(e.getMessage(), false);
+				System.out.println(e.getStackTrace());
+			}
 		} else {
 			if (this.currentRequest.requestedPageLocation
 					.equalsIgnoreCase(serverSubmitResponseFileName)) {
@@ -346,10 +405,10 @@ public class HttpRequestHandler implements Runnable {
 		System.out.println("Starting Port Scan Stub");
 	}
 
-	private byte[] createStatsPostResponseHTML(String key) throws IOException {
-		File file = new File(rootDir + "stats.html");
+	private byte[] createStatsPostResponseHTML(String domain, boolean isDone) throws IOException {
+		File file = new File(rootDir + "/execResult.tmp.html");
 		BufferedWriter bw = new BufferedWriter(new FileWriter(file));
-		postResponseStatsHTMLBody(bw, key);
+		postResponseStatsHTMLBody(bw, domain, isDone);
 
 		FileInputStream fileInputStream = new FileInputStream(file);
 		byte[] responseBytes = new byte[(int) file.length()];
@@ -362,52 +421,22 @@ public class HttpRequestHandler implements Runnable {
 		return responseBytes;
 	}
 
-	private void postResponseStatsHTMLBody(BufferedWriter bw, String key) throws IOException {
+	private void postResponseStatsHTMLBody(BufferedWriter bw, String domain, boolean isDone) throws IOException {
 		bw.write("<!DOCTYPE html>");
-
-		bw.write("<head>");
-//		bw.write("<link rel=\"stylesheet\" type=\"text/css\" href=\"style.css\">");
-		bw.write("</head>");
 		bw.write("<body bgcolor='#A9D0F5'>");
-		bw.write("<iframe src=\"http://free.timeanddate.com/clock/i4za5yzk/n676/szw110/szh110/hbw0/hfc111/cf100/hgr0/fav0/fiv0/mqcfff/mql15/mqw4/mqd94/mhcfff/mhl15/mhw4/mhd94/hhcbbb/hmcddd/hsceee\" frameborder=\"0\" width=\"110\" height=\"110\" align:\"right\"></iframe>");
+
 		
-		bw.write("<h2>Computer networks 2015/2016</h2>");
-		bw.write("<h3> Tal Bigel, Sharon David </h3>");
-
-		bw.write("<br>");
-		
-		bw.write("<h3>Values sent to the server</h3>");
-		bw.write("<br>");
-
-		bw.write("<table border = \"1\"");
-		bw.write("<tr>");
-
-		bw.write("<th>");
-		bw.write("Parameter Key");
-		bw.write("</th>");
-
-		bw.write("<th>");
-		bw.write("Parameter Value");
-		bw.write("</th>");
-
-		bw.write("</tr>");
-
-//		for (Entry<String, String> entry : parametersHashMap.entrySet()) {
-		for (Entry<String, String> entry : domainMap.get(key).map.entrySet()) {
-			bw.write("<tr>");
-			bw.write("<td>");
-			bw.write(entry.getKey());
-			bw.write("</td>");
-			bw.write("<td>");
-			bw.write(entry.getValue());
-			bw.write("</td>");
-			bw.write("</tr>");
+		//param3 (started) true:
+		if(isDone){
+			bw.write("Crawler Started successfully!<br>");
+			bw.write("Domain: " + domain + "<br>");
 		}
-
-		bw.write("</table>");
-		bw.write("</div>");
-		bw.write("<a href='/index.html' class=\"link\">Back to index</a><br>");
-		bw.write("<a href='/form.html' class=\"link\">Back to form</a>");
+		else{//param3 started false
+			bw.write("Crawler Failed to start because:<br>");
+			bw.write("e.getMessage() is: " + domain);
+		}
+		
+		
 		bw.write("</body>");
 		bw.write("</html>");
 		bw.close();
@@ -550,6 +579,7 @@ public class HttpRequestHandler implements Runnable {
 			if (requestString == null || requestString.isEmpty()) {
 				return; // no request to process.
 			}
+			System.out.println("REQUEST STRING " + requestString);
 			byte[][] response = createResponse(requestString);
 			System.out.print(new String(response[0])); // print request as
 														// required.

@@ -8,6 +8,7 @@ import java.io.InputStreamReader;
 import java.net.Socket;
 import java.net.UnknownHostException;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map.Entry;
@@ -22,6 +23,7 @@ public class Analyzer implements Runnable {
 	int urlCounter = 0;
 	HashMap<String, Statistics> domainMap;
 	class1 c1object;
+
 
 	public Analyzer(SynchronizedQueue<String> url,
 			SynchronizedQueue<AnalyzerQueueObject> data,
@@ -55,52 +57,55 @@ public class Analyzer implements Runnable {
 			// currData.host);
 			// }
 			if (currData.statusCode.equalsIgnoreCase("200")) {
+				if(!currData.host.equalsIgnoreCase(c1object.initialDomain)){
+					c1object.decrement();
+					//this is external link
+					System.out.println("EXTERNAL LINK" + currData.url );
+					domainMap.get(c1object.initialDomain).addToKey("# of external links ", "1");
+					continue;
+				}
 				// if img
-				if (currData.url.endsWith(".png")
-						|| currData.url.endsWith(".bmp")
-						|| currData.url.endsWith(".jpg")
-						|| currData.url.endsWith(".gif")
-						|| currData.url.endsWith(".ico")) {
+				if (isImg(currData.url)) {
 					System.out.println("IMG CONTENT LENGTH IS "
 							+ currData.ContentLength);
-					domainMap.get(currData.host).addToKey("Total img size",String.valueOf(currData.ContentLength));
+					domainMap.get(currData.host).addToKey("Total img size",
+							String.valueOf(currData.ContentLength));
 
 				}
 				// if video
-				else if (currData.url.endsWith(".mp4")
-						|| currData.url.endsWith(".avi")
-						|| currData.url.endsWith(".mpg")
-						|| currData.url.endsWith(".wmv")
-						|| currData.url.endsWith(".mov")
-						|| currData.url.endsWith(".flv")
-						|| currData.url.endsWith(".swf")
-						|| currData.url.endsWith(".mkv")) {
+				else if (isVideo(currData.url)) {
 					System.out.println("VIDEO CONTENT LENGTH IS "
 							+ currData.ContentLength);
-					domainMap.get(currData.host).addToKey("Total video size",String.valueOf(currData.ContentLength));
+					domainMap.get(currData.host).addToKey("Total video size",
+							String.valueOf(currData.ContentLength));
 				}
 				// if doc
-				else if (currData.url.endsWith(".pdf")
-						|| currData.url.endsWith(".doc")
-						|| currData.url.endsWith(".docx")
-						|| currData.url.endsWith(".ppt")
-						|| currData.url.endsWith(".pptx")
-						|| currData.url.endsWith(".xlsx")
-						|| currData.url.endsWith(".xls")) {
+				else if (isDoc(currData.url)) {
 					System.out.println("DOC CONTENT LENGTH IS "
 							+ currData.ContentLength);
-					domainMap.get(currData.host).addToKey("Total documents size",String.valueOf(currData.ContentLength));
+					domainMap.get(currData.host).addToKey(
+							"Total documents size",
+							String.valueOf(currData.ContentLength));
 				} else { // html page
-					System.out.println("PAGE CONTENT LENGTH IS "
-							+ currData.ContentLength);
-					currPageBody = currData.httpResponseAsString;
+					if (currData.host.equals(c1object.initialDomain)) {
+						System.out.println("PAGE CONTENT LENGTH IS "
+								+ currData.ContentLength);
+						currPageBody = currData.httpResponseAsString;
 
-					crawlHref(currPageBody, currData.host, currData.crawlPort);
-					System.out.println(Thread.currentThread().getName() + " "
-							+ "# of urls " + urlCounter);
-//					domainMap.get(currData.host).addToKey("Total url size",String.valueOf(currData.ContentLength));
-					crawlImgs(currPageBody, currData.host, currData.url,
-							currData.crawlPort);
+						crawlHref(currPageBody, currData.host,
+								currData.crawlPort);
+						System.out.println(Thread.currentThread().getName()
+								+ " " + "# of urls " + urlCounter);
+						domainMap.get(currData.host).addToKey(
+								"# of internal links", "1");
+						domainMap.get(currData.host).addToKey("Total url size",
+								String.valueOf(currData.ContentLength));
+						crawlImgs(currPageBody, currData.host, currData.url,
+								currData.crawlPort);
+					} else {
+						domainMap.get(currData.host).addToKey(
+								"# of external links", "1");
+					}
 				}
 
 				System.out.println(Thread.currentThread().getName() + " "
@@ -115,13 +120,44 @@ public class Analyzer implements Runnable {
 		}
 	}
 
+	public boolean isImg(String url) {
+		ArrayList<String> temp = c1object.getImagesExtensions();
+		for (String type : temp) {
+			if (url.endsWith(type))
+				return true;
+		}
+		return false;
+	}
+
+	public boolean isVideo(String url) {
+		ArrayList<String> temp = c1object.getImagesExtensions();
+		for (String type : temp) {
+			if (url.endsWith(type))
+				return true;
+		}
+		return false;
+	}
+
+	public boolean isDoc(String url) {
+		ArrayList<String> temp = c1object.getImagesExtensions();
+		for (String type : temp) {
+			if (url.endsWith(type))
+				return true;
+		}
+		return false;
+	}
+
 	private void crawlHref(String currPage, String host, int crawlPort) {
 		Pattern p = Pattern.compile("<a href=\"(.*?)\">");
+//		Pattern p = Pattern.compile("<a.+?href=\"(.*?)\">");
 		Matcher m = p.matcher(currPage);
 		System.out.println("**Matcher loop**");
 		String nextUrl;
 		urlCounter = 0;
 		while (m.find()) {
+			if(m.group(0).contains("mailto")){
+				continue;
+			}
 			System.out.println("Group 0 is " + m.group(0));
 			System.out.println(m.group(1));
 			urlCounter++;
@@ -146,7 +182,7 @@ public class Analyzer implements Runnable {
 				}
 			} else {
 				if (m.group(1).startsWith("/")) {
-//					nextUrl = host + ":" + crawlPort + m.group(1);
+					// nextUrl = host + ":" + crawlPort + m.group(1);
 					nextUrl = host + m.group(1);
 				} else {
 					String relativePath = "";
@@ -205,7 +241,7 @@ public class Analyzer implements Runnable {
 				}
 			} else {
 				if (m.group(1).startsWith("/")) {
-//					nextImg = host + ":" + crawlPort + m.group(1);
+					// nextImg = host + ":" + crawlPort + m.group(1);
 					nextImg = host + m.group(1);
 				} else {
 					String relativePath = "";
