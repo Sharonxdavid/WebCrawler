@@ -12,6 +12,7 @@ public class ExecResListener implements Runnable {
 
 	SynchronizedQueue<String> downloaderQueue;
 	SynchronizedQueue<AnalyzerQueueObject> analyzerQueue;
+	SynchronizedQueue<Integer> ports;
 	Statistics stats;
 	HashMap<String, Statistics> domainMap;
 	class1 c1object;
@@ -20,13 +21,14 @@ public class ExecResListener implements Runnable {
 	public ExecResListener(SynchronizedQueue<String> downloaderQueue,
 			SynchronizedQueue<AnalyzerQueueObject> analyzerQueue,
 			HashMap<String, Statistics> domainMap, String host,
-			class1 class1Object) {
+			class1 class1Object, SynchronizedQueue<Integer> ports) {
 		this.downloaderQueue = downloaderQueue;
 		this.analyzerQueue = analyzerQueue;
 		this.domainMap = domainMap;
 		this.stats = domainMap.get(host);
 		this.c1object = class1Object;
 		this.host = host;
+		this.ports = ports;
 	}
 
 	@Override
@@ -34,6 +36,7 @@ public class ExecResListener implements Runnable {
 		System.out.println("---Started ExecResListener---");
 		System.out.println("---Started ExecResListener---");
 		while (true) {
+
 			if (c1object.isDone(downloaderQueue, analyzerQueue)) {
 				break;
 			} else {

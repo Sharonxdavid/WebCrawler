@@ -1,10 +1,19 @@
+import java.util.ArrayList;
 import java.util.HashMap;
 
 public class Statistics {
 
 	HashMap<String, String> map;
-
+	ArrayList<String> visitedURL;
+	ArrayList<String> visitedImg;
+	ArrayList<String> visited;
+	ArrayList<String> externalLink;
+	
 	public Statistics() {
+		visitedImg = new ArrayList<>();
+		visitedURL = new ArrayList<>();
+		visited = new ArrayList<>();
+		externalLink = new ArrayList<>();
 		map = new HashMap<>();
 		map.put("Domain Name", "");
 		map.put("# of imgs", "0");

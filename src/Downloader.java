@@ -110,15 +110,21 @@ public class Downloader implements Runnable {
 					while (socket.isConnected() == false) {
 						// TODO: enter timeout to make sure it quits sometime...
 					}
-
-					DataOutputStream outputStream = new DataOutputStream(
-							socket.getOutputStream());
-					outputStream.write(reqAsString.getBytes());
-					long startTime = new Date().getTime();
-					long endTime;
-
+					
 					BufferedReader rd = new BufferedReader(
 							new InputStreamReader(socket.getInputStream()));
+					
+					DataOutputStream outputStream = new DataOutputStream(
+							socket.getOutputStream());
+					long startTime = new Date().getTime();
+					outputStream.write(reqAsString.getBytes());
+					outputStream.flush();
+					while(rd.ready() == false){
+						
+					}
+					long endTime = new Date().getTime();
+
+					
 					// ByteStringInputStream rd = new
 					// ByteStringInputStream(socket.getInputStream());
 					String line;
@@ -127,7 +133,6 @@ public class Downloader implements Runnable {
 							+ "before read response");
 					try {
 						socket.setSoTimeout(5000);
-						endTime = new Date().getTime();
 						while ((line = rd.readLine()) != null) {
 							// while ((line = rd.readOneLine()) != null) {
 							System.out.println(Thread.currentThread().getName()

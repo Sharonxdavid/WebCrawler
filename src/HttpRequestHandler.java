@@ -39,11 +39,12 @@ public class HttpRequestHandler implements Runnable {
 
 	SynchronizedQueue<String> downloaderQueue;
 	SynchronizedQueue<AnalyzerQueueObject> analyzerQueue;
-	
+	SynchronizedQueue<Integer> ports;
+
 	HashMap<String, Statistics> domainMap;
-	
+
 	class1 c1object;
-	
+
 	/**
 	 * Class constructor
 	 * 
@@ -53,9 +54,10 @@ public class HttpRequestHandler implements Runnable {
 	 * @param downloaderQueue 
 	 * @param domainMap 
 	 * @param c1object 
+	 * @param ports 
 	 * @param analyzerQueue2 
 	 */
-	public HttpRequestHandler(Socket socket, String rootDir, String defaultPage, SynchronizedQueue<String> downloaderQueue, SynchronizedQueue<AnalyzerQueueObject> analyzerQueue, HashMap<String, Statistics> domainMap, class1 c1object) {
+	public HttpRequestHandler(Socket socket, String rootDir, String defaultPage, SynchronizedQueue<String> downloaderQueue, SynchronizedQueue<AnalyzerQueueObject> analyzerQueue, HashMap<String, Statistics> domainMap, class1 c1object, SynchronizedQueue<Integer> ports) {
 		parametersHashMap = new HashMap<String, String>();
 		this.socket = socket;
 		HttpRequestHandler.defaultPage = defaultPage;
@@ -65,6 +67,7 @@ public class HttpRequestHandler implements Runnable {
 		this.domainMap = domainMap;
 		downloaderQueue.registerProducer();
 		this.c1object = c1object;
+		this.ports = ports;
 	}
 
 	// Getters
@@ -105,7 +108,7 @@ public class HttpRequestHandler implements Runnable {
 	private void writeChunked(DataOutputStream outputStream,
 			byte[][] responseData) throws NumberFormatException, IOException {
 		int chunkSize = Integer.parseInt("400", 16);// setting chunk size to be
-													// 1024- 400 in hex base.
+		// 1024- 400 in hex base.
 		int bytesCounter = 0;
 		byte[] bytesToWriteArray;
 		int bytesLeftToWrite = responseData[1].length - bytesCounter;
@@ -121,12 +124,12 @@ public class HttpRequestHandler implements Runnable {
 				System.arraycopy(responseData[1], bytesCounter,
 						bytesToWriteArray, 0, chunkSize);
 				bytesCounter += chunkSize; // update counter after setting
-											// another chunk
+				// another chunk
 			}
 			// write chunk to stream
 			outputStream
-					.write((Integer.toHexString(bytesToWriteArray.length) + CRLF)
-							.getBytes());
+			.write((Integer.toHexString(bytesToWriteArray.length) + CRLF)
+					.getBytes());
 			outputStream.write(bytesToWriteArray);
 			outputStream.write(CRLF.getBytes());
 
@@ -146,7 +149,7 @@ public class HttpRequestHandler implements Runnable {
 	 * @throws HttpRequestException
 	 */
 	private String readRequest(BufferedReader buffer) throws IOException,
-			HttpRequestException {
+	HttpRequestException {
 
 		StringBuilder requestStringFormat = new StringBuilder();
 		String currLine;
@@ -170,9 +173,9 @@ public class HttpRequestHandler implements Runnable {
 			char[] readParameters = new char[currentRequest.ContentLength];
 			buffer.read(readParameters);
 			requestStringFormat.append(String.valueOf(readParameters)); // add
-																		// params
-																		// to
-																		// request
+			// params
+			// to
+			// request
 		}
 
 		return requestStringFormat.toString();
@@ -194,11 +197,11 @@ public class HttpRequestHandler implements Runnable {
 			int bodyStartIndex = requestString.indexOf(CRLF + CRLF) + 2 * 2;
 			byte[] pageContent;
 			// create response according to request method.
-//			System.out.println("CURR REQUEST");
-//			System.out.println(currentRequest.requestedPageLocation);
-//			System.out.println(currentRequest.Referer);
-//			System.out.println(currentRequest.methodType);
-//			System.out.println("ISDONE" + c1object.isDone(downloaderQueue, analyzerQueue));
+			//			System.out.println("CURR REQUEST");
+			//			System.out.println(currentRequest.requestedPageLocation);
+			//			System.out.println(currentRequest.Referer);
+			//			System.out.println(currentRequest.methodType);
+			//			System.out.println("ISDONE" + c1object.isDone(downloaderQueue, analyzerQueue));
 			if (currentRequest.methodType == HttpMethods.POST) {
 				System.out.println("** handle post ! **");
 				pageContent = handlePostRequest(requestString, bodyStartIndex);
@@ -208,10 +211,10 @@ public class HttpRequestHandler implements Runnable {
 					pageContent = handleGetCrawlFormRequest(requestString, isDone);
 
 				}
-//				if (currentRequest.requestedPageLocation.equals("\\"
-//						+ "stats.html")) {
-//					pageContent = handleGetRequest(requestString);
-//				}
+				//				if (currentRequest.requestedPageLocation.equals("\\"
+				//						+ "stats.html")) {
+				//					pageContent = handleGetRequest(requestString);
+				//				}
 				else if (currentRequest.requestedPageLocation.equals("\\"
 						+ serverSubmitResponseFileName)) {
 					pageContent = handleGetRequest(requestString);
@@ -265,7 +268,8 @@ public class HttpRequestHandler implements Runnable {
 			httpResponse[0] = exception.toString().getBytes();
 			return httpResponse;
 		} catch (Exception exception) {
-			exception.getStackTrace();
+			exception.printStackTrace();
+			System.out.println("272!!!");
 			HttpRequestException httpRequestException = new HttpRequestException(
 					500);
 			httpResponse[0] = httpRequestException.toString().getBytes();
@@ -305,14 +309,14 @@ public class HttpRequestHandler implements Runnable {
 			bw.write("<input type=\"submit\" value=\"Start crawler\">");
 			bw.write("</form>");
 		}
-		 else{
-			 bw.write("Crawler already running...<br>");
-			 bw.write("currently scanning " + c1object.initialDomain);
-		 }
+		else{
+			bw.write("Crawler already running...<br>");
+			bw.write("currently scanning " + c1object.initialDomain);
+		}
 
 		bw.write("</body>");
 		bw.write("</html>");
-		
+
 		bw.close();
 	}
 
@@ -327,7 +331,7 @@ public class HttpRequestHandler implements Runnable {
 	 */
 	private byte[] handlePostRequest(String requestString, int bodyStartIndex)
 			throws IOException, HttpRequestException {
-		byte[] pageContent;
+		byte[] pageContent = null;
 		String requestBody = null;
 		if (currentRequest.ContentLength > 0) {
 			requestBody = requestString.substring(bodyStartIndex,
@@ -336,51 +340,78 @@ public class HttpRequestHandler implements Runnable {
 		if (this.currentRequest.requestedPageLocation
 				.equalsIgnoreCase("execResult.html")) {
 			try{
-			parseParamsFromString(requestBody);
+				parseParamsFromString(requestBody);
 
-			String crawlUrl = parametersHashMap.get("Domain");
+				String crawlUrl = parametersHashMap.get("Domain");
 
-			// both strings are null or "on"
-			String robotScan = parametersHashMap.get("robotscan");
-			String portScan = parametersHashMap.get("portscan");
+				// both strings are null or "on"
+				String robotScan = parametersHashMap.get("robotscan");
+				String portScan = parametersHashMap.get("portscan");
 
-			String tempCrawlUrl="";
-			int crawlPort = 80;
-			tempCrawlUrl = java.net.URLDecoder.decode(crawlUrl, "UTF-8");
-			if(!domainMap.containsKey(tempCrawlUrl)){
-				c1object.setInitialDomain(tempCrawlUrl);
-				c1object.initDateTime();
-				if(tempCrawlUrl.contains(":")){
-					String[] temp = tempCrawlUrl.split(":");
-					crawlUrl = temp[0];
-					crawlPort = Integer.valueOf(temp[1]);
+				String tempCrawlUrl="";
+				int crawlPort = 80;
+				tempCrawlUrl = java.net.URLDecoder.decode(crawlUrl, "UTF-8");
+				if(!domainMap.containsKey(tempCrawlUrl)){
+					c1object.setInitialDomain(tempCrawlUrl);
+					c1object.initDateTime();
+					//				if(tempCrawlUrl.contains(":")){
+					//					String[] temp = tempCrawlUrl.split(":");
+					//					crawlUrl = temp[0];
+					//					crawlPort = Integer.valueOf(temp[1]);
+					//				}
+					domainMap.put(tempCrawlUrl, new Statistics());
+					domainMap.get(tempCrawlUrl).map.put("Domain Name", tempCrawlUrl);
+
+					if (portScan != null && portScan.equals("on")){
+						System.out.println("Starting Port Scan Stub");
+						System.out.println("Starting Port Scan Stub");
+						System.out.println("Starting Port Scan Stub");
+						System.out.println("Starting Port Scan Stub");
+						System.out.println("Starting Port Scan Stub");
+						System.out.println("Starting Port Scan Stub");
+						for (int i = 1; i < 1025; i++) {
+							this.ports.enqueue(i);
+						}
+						PortScanThread scan = new PortScanThread(downloaderQueue, analyzerQueue,domainMap, domainMap.get(tempCrawlUrl).map.get("Domain Name"),this.ports,c1object);
+						scan.start();
+					}
+					else{
+						downloaderQueue.enqueue(c1object.initialDomain);
+						ExecResListener execRes = new ExecResListener(this.downloaderQueue,this.analyzerQueue,domainMap, domainMap.get(c1object.initialDomain).map.get("Domain Name"), c1object, ports);
+
+						Thread execResThread = new Thread(execRes);
+						execResThread.start();
+					}
+					System.out.println("IS DONE PORT SCAN" + c1object.isDonePortScan(ports));
+					System.out.println("IS DONE PORT SCAN" + c1object.isDonePortScan(ports));
+					System.out.println("IS DONE PORT SCAN" + c1object.isDonePortScan(ports));
+					System.out.println("IS DONE PORT SCAN" + c1object.isDonePortScan(ports));
+
+					if(c1object.isDonePortScan(ports)){
+						System.out.println(c1object.portScanRes);
+					}
+
+					//				if (robotScan == null || robotScan.equals("off")){
+					//					RobotRules rr = RobotRules.loadRobotsTxt(crawlUrl, 80);
+					//				}
+
+					//				crawlUrl = tempCrawlUrl;
+
+					//				downloaderQueue.enqueue(tempCrawlUrl);//TODO: TODO TODO TODO TODO TODO TODO TODO TODO TODO
+
+					//				ExecResListener execRes = new ExecResListener(this.downloaderQueue,this.analyzerQueue,domainMap, domainMap.get(tempCrawlUrl).map.get("Domain Name"), c1object, ports);
+					//
+					//				Thread execResThread = new Thread(execRes);
+					//				execResThread.start();
+					pageContent = createStatsPostResponseHTML(crawlUrl, true);
+				}else{
+					System.out.println("Already crawled domain");
+					pageContent = createStatsPostResponseHTML(crawlUrl, true);
 				}
-				
-				if (portScan != null && portScan.equals("on")){
-					startPortScan(crawlUrl);
-				}
-
-//				if (robotScan == null || robotScan.equals("off")){
-//					RobotRules rr = RobotRules.loadRobotsTxt(crawlUrl, 80);
-//				}
-
-				domainMap.put(tempCrawlUrl, new Statistics());
-				domainMap.get(tempCrawlUrl).map.put("Domain Name", tempCrawlUrl);
-//				crawlUrl = tempCrawlUrl;
-				
-				downloaderQueue.enqueue(tempCrawlUrl);//TODO: TODO TODO TODO TODO TODO TODO TODO TODO TODO
-			
-				ExecResListener execRes = new ExecResListener(this.downloaderQueue,this.analyzerQueue,domainMap, domainMap.get(tempCrawlUrl).map.get("Domain Name"), c1object);
-
-				Thread execResThread = new Thread(execRes);
-				execResThread.start();
-			}
-			System.out.println(new Date() + "HTTP handler, queue size " + downloaderQueue.getSize());
-			pageContent = createStatsPostResponseHTML(crawlUrl, true);
 			}
 			catch (Exception e) {
 				pageContent = createStatsPostResponseHTML(e.getMessage(), false);
-				System.out.println(e.getStackTrace());
+				e.printStackTrace();
 			}
 		} else {
 			if (this.currentRequest.requestedPageLocation
@@ -395,15 +426,20 @@ public class HttpRequestHandler implements Runnable {
 		return pageContent;
 	}
 
-	private void startPortScan(String crawlUrl) {
-		// TODO Auto-generated method stub
-		System.out.println("Starting Port Scan Stub");
-		System.out.println("Starting Port Scan Stub");
-		System.out.println("Starting Port Scan Stub");
-		System.out.println("Starting Port Scan Stub");
-		System.out.println("Starting Port Scan Stub");
-		System.out.println("Starting Port Scan Stub");
-	}
+	//	private void startPortScan(String crawlUrl) {
+	//		// TODO Auto-generated method stub
+	//		System.out.println("Starting Port Scan Stub");
+	//		System.out.println("Starting Port Scan Stub");
+	//		System.out.println("Starting Port Scan Stub");
+	//		System.out.println("Starting Port Scan Stub");
+	//		System.out.println("Starting Port Scan Stub");
+	//		System.out.println("Starting Port Scan Stub");
+	//		for (int i = 1; i < 1025; i++) {
+	//			this.ports.enqueue(i);
+	//		}
+	//		PortScanThread scan = new PortScanThread(this.ports,c1object);
+	//		scan.start();
+	//	}
 
 	private byte[] createStatsPostResponseHTML(String domain, boolean isDone) throws IOException {
 		File file = new File(rootDir + "/execResult.tmp.html");
@@ -425,7 +461,7 @@ public class HttpRequestHandler implements Runnable {
 		bw.write("<!DOCTYPE html>");
 		bw.write("<body bgcolor='#A9D0F5'>");
 
-		
+
 		//param3 (started) true:
 		if(isDone){
 			bw.write("Crawler Started successfully!<br>");
@@ -435,12 +471,12 @@ public class HttpRequestHandler implements Runnable {
 			bw.write("Crawler Failed to start because:<br>");
 			bw.write("e.getMessage() is: " + domain);
 		}
-		
-		
+
+
 		bw.write("</body>");
 		bw.write("</html>");
 		bw.close();
-		
+
 	}
 
 	/**
@@ -475,17 +511,17 @@ public class HttpRequestHandler implements Runnable {
 		for (String param : params) {
 			String[] paramKeyValue = param.split("=");
 			if (paramKeyValue.length == 1 && param.indexOf("=") != -1)// param
-																		// has
-																		// no
-																		// value
+				// has
+				// no
+				// value
 				parametersHashMap.put(paramKeyValue[0], "NO VALUE SENT");
 			else if (paramKeyValue.length == 2) {
 				parametersHashMap.put(paramKeyValue[0], paramKeyValue[1]); // store
-																			// all
-																			// params
-																			// in
-																			// params
-																			// map.
+				// all
+				// params
+				// in
+				// params
+				// map.
 			} else {
 				// params isn't in format - ignore.
 			}
@@ -582,7 +618,7 @@ public class HttpRequestHandler implements Runnable {
 			System.out.println("REQUEST STRING " + requestString);
 			byte[][] response = createResponse(requestString);
 			System.out.print(new String(response[0])); // print request as
-														// required.
+			// required.
 
 			// headers
 			outputStream.write(response[0]);
@@ -595,28 +631,28 @@ public class HttpRequestHandler implements Runnable {
 
 				} else {
 					outputStream.write(response[1]); // not chunked, write all
-														// at once.
+					// at once.
 				}
 			}
 		} catch (HttpRequestException e) {
 			try {
 				outputStream.writeBytes(e.toString());
 			} catch (IOException e2) {
-				System.out.println(e2.getClass().getSimpleName()
-						+  e.getStackTrace() + " 6 thrown, with message: " + e.getMessage());
+				e2.printStackTrace();
+				System.out.println(" 6 thrown, with message: " + e.getMessage());
 			}
 		} catch (Exception e) {
-			System.out.println(e.getClass().getSimpleName()
-					+  e.getStackTrace() +" 7 thrown, with message: " + e.getMessage());
+			e.printStackTrace();
+			System.out.println(" 7 thrown, with message: " + e.getMessage());
 		} finally {
 			try {
 				decreaseThreadCounter(); // thread has finished
 				socket.close();
 				downloaderQueue.unregisterProducer();
 			} catch (IOException e) {
-				e.getStackTrace();
+				e.printStackTrace();
 				System.out
-						.println(HttpRequestException.HTTP_CODE_500_INTERNAL_ERROR);
+				.println( HttpRequestException.HTTP_CODE_500_INTERNAL_ERROR);
 			}
 		}
 	}
@@ -661,7 +697,8 @@ public class HttpRequestHandler implements Runnable {
 		} catch (FileNotFoundException e) {
 			throw new HttpRequestException(404);
 		} catch (IOException e) {
-			e.getStackTrace();
+			e.printStackTrace();
+			System.out.println("693!!!");
 			throw new HttpRequestException(500);
 		} catch (Exception e) {
 			throw new HttpRequestException(404);

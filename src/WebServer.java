@@ -27,6 +27,7 @@ public class WebServer {
 	
 	SynchronizedQueue<String> downloaderQueue;
 	SynchronizedQueue<AnalyzerQueueObject> analyzerQueue;
+	SynchronizedQueue<Integer> ports;
 	class1 c1object;
 	
 	Downloader downloader;
@@ -40,6 +41,7 @@ public class WebServer {
 //		this.downloaderQueue = new SynchronizedQueue<>(10000, c1object);
 		this.downloaderQueue = new SynchronizedQueue<>(10000);
 		this.analyzerQueue = new SynchronizedQueue<>(10000);
+		this.ports = new SynchronizedQueue<>(1024);
 		domainMap = new HashMap<>();
 		downloader = new Downloader(downloaderQueue, analyzerQueue, domainMap, c1object);
 		analyzer = new Analyzer(downloaderQueue, analyzerQueue, domainMap, c1object);
@@ -124,7 +126,7 @@ public class WebServer {
 					// check if possible to create a new thread
 					canCreateNewThread = checkLock(canCreateNewThread);
 					// check if a new thread can be added, then start it.
-					startThread(canCreateNewThread, currentConnection, downloaderQueue, analyzerQueue);
+					startThread(canCreateNewThread, currentConnection, downloaderQueue, analyzerQueue, ports);
 				} catch (Exception e) {
 					System.out.println(e.getClass().getSimpleName()
 							+ " Server listener loop --- 4 thrown, with message: " + e.getMessage());
@@ -171,12 +173,13 @@ public class WebServer {
 	 * @param currentConnection
 	 * @param downloaderQueue 
 	 * @param analyzerQueue 
+	 * @param ports 
 	 */
 	private void startThread(boolean canCreateNewThread,
-			Socket currentConnection, SynchronizedQueue<String> downloaderQueue, SynchronizedQueue<AnalyzerQueueObject> analyzerQueue) {
+			Socket currentConnection, SynchronizedQueue<String> downloaderQueue, SynchronizedQueue<AnalyzerQueueObject> analyzerQueue, SynchronizedQueue<Integer> ports) {
 		if (canCreateNewThread) { // if true, a new thread would start
 			HttpRequestHandler handler = new HttpRequestHandler(
-					currentConnection, this.rootDir, this.defaultPage, downloaderQueue, analyzerQueue, domainMap, c1object);
+					currentConnection, this.rootDir, this.defaultPage, downloaderQueue, analyzerQueue, domainMap, c1object, ports);
 			Thread thread = new Thread(handler);
 			thread.start();
 		}

@@ -1,3 +1,4 @@
+import java.lang.reflect.Array;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -12,8 +13,11 @@ public class class1 {
 	private ArrayList<String> videoExtensions = new ArrayList<>();
 	private ArrayList<String> documentExtensions = new ArrayList<>();
 	
+	
 	String rootPath;
 	String startCrawlDateTime;
+	
+	ArrayList<Integer> portScanRes = new ArrayList<>();
 
 	public synchronized void increment() {
 		j++;
@@ -32,6 +36,11 @@ public class class1 {
 		System.out.println(s);
 		return (downloaderQueue.getSize() == 0 && analyzerQueue.getSize() == 0 && j == 0);
 	}
+	
+	public synchronized boolean isDonePortScan(SynchronizedQueue<Integer> ports){
+		return(ports.getSize() == 0);
+	}
+	
 	public String dateTime() {
 		SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMdd_HHmmss");
 		return sdf.format(new Date());
