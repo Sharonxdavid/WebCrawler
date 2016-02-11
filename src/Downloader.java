@@ -51,7 +51,7 @@ public class Downloader implements Runnable {
 		String currURL;
 
 		while ((currURL = URLtoDownload.dequeue()) != null) {
-			
+
 			System.out.println(Thread.currentThread().getName() + " "
 					+ "before increment Downloader");
 			c1object.increment();
@@ -80,11 +80,11 @@ public class Downloader implements Runnable {
 						relativePath = relativePath + "/" + levels[i];
 					}
 				}
-//				if (domainHost.contains(":")) {
-//					String[] temp = domainHost.split(":");
-//					domainHost = temp[0];
-//					crawlPort = Integer.valueOf(temp[1]);
-//				}
+				// if (domainHost.contains(":")) {
+				// String[] temp = domainHost.split(":");
+				// domainHost = temp[0];
+				// crawlPort = Integer.valueOf(temp[1]);
+				// }
 
 				System.out.println("************" + "url host is " + domainHost
 						+ "port " + crawlPort + " path is" + relativePath);
@@ -110,23 +110,24 @@ public class Downloader implements Runnable {
 					while (socket.isConnected() == false) {
 						// TODO: enter timeout to make sure it quits sometime...
 					}
-					
+
 					BufferedReader rd = new BufferedReader(
 							new InputStreamReader(socket.getInputStream()));
-					
+
 					DataOutputStream outputStream = new DataOutputStream(
 							socket.getOutputStream());
 					long startTime = new Date().getTime();
 					outputStream.write(reqAsString.getBytes());
 					outputStream.flush();
-					while(rd.ready() == false){
-						
+					while (rd.ready() == false) {
+
 					}
 					long endTime = new Date().getTime();
 					long diff = endTime - startTime;
-					System.out.println("TIME DIFFERENCE " + (endTime - startTime));
+					System.out.println("TIME DIFFERENCE "
+							+ (endTime - startTime));
 					domainMap.get(c1object.initialDomain).rtt.add(diff);
-					
+
 					// ByteStringInputStream rd = new
 					// ByteStringInputStream(socket.getInputStream());
 					String line;
@@ -149,7 +150,7 @@ public class Downloader implements Runnable {
 								+ " " + new Date() + " Enqueue Analyzer1");
 						HTMLtoAnalyze.enqueue(new AnalyzerQueueObject(result,
 								domainHost, crawlPort, urlSrcToAnalyze,
-								new Date()));
+								new Date(), 0));
 					} catch (SocketTimeoutException e) {
 						System.out.println(Thread.currentThread().getName()
 								+ " " + "Socket time out! (Expected:)");
@@ -157,7 +158,7 @@ public class Downloader implements Runnable {
 								+ " " + new Date() + " Enqueue Analyzer2");
 						HTMLtoAnalyze.enqueue(new AnalyzerQueueObject(result,
 								domainHost, crawlPort, urlSrcToAnalyze,
-								new Date()));
+								new Date(), 0));
 					} catch (SocketException e) {
 						System.out.println(Thread.currentThread().getName()
 								+ " " + "Socket expcetion in here");
@@ -185,24 +186,25 @@ public class Downloader implements Runnable {
 
 					BufferedReader rd = new BufferedReader(
 							new InputStreamReader(socket.getInputStream()));
-					
+
 					DataOutputStream outputStream = new DataOutputStream(
 							socket.getOutputStream());
 					outputStream.write(reqAsString.getBytes());
 					outputStream.flush();
-					
+
 					long startTime = new Date().getTime();
 					outputStream.write(reqAsString.getBytes());
 					outputStream.flush();
-					while(rd.ready() == false){
-						
+					while (rd.ready() == false) {
+
 					}
 					long endTime = new Date().getTime();
-					System.out.println("TIME DIFFERENCE " + (endTime - startTime));
+					System.out.println("TIME DIFFERENCE "
+							+ (endTime - startTime));
 					long diff = endTime - startTime;
 					domainMap.get(c1object.initialDomain).rtt.add(diff);
-//					while (rd.ready() == false) {}
-					
+					// while (rd.ready() == false) {}
+
 					String line = null;
 					int readResult = -1;
 					String urlSrcToAnalyze = "";
@@ -213,6 +215,7 @@ public class Downloader implements Runnable {
 					int lengthToRead = -1;
 					int readingCounter = 0;
 					boolean isChunked = false;
+					int totalChunk = 0;
 					try {
 						socket.setSoTimeout(5000);
 						while ((line = rd.readLine()) != null) {
@@ -228,52 +231,61 @@ public class Downloader implements Runnable {
 									lengthToRead = Integer.parseInt(args[1]);
 								} else if (args[0]
 										.equalsIgnoreCase("Transfer-Encoding")) {
-									System.out.println(args[1].length() + " " + args[1]);
+									System.out.println(args[1].length() + " "
+											+ args[1]);
 									if (args[1].equalsIgnoreCase("chunked")) {
 										isChunked = true;
 									}
 								}
 							}
 							headersToAnalyze += line + "\r\n";
-							//							 urlSrcToAnalyze += line;
+							// urlSrcToAnalyze += line;
 
 						}
-						if(isChunked){
+						if (isChunked) {
 							line = rd.readLine();
-							System.out.println("if chunked this is line: " + line);
+							System.out.println("if chunked this is line: "
+									+ line);
 							lengthToRead = Integer.parseInt(line, 16);
-							System.out.println("after changing from hex to int " + lengthToRead);
+							totalChunk+=lengthToRead;
+							System.out
+									.println("after changing from hex to int "
+											+ lengthToRead);
 							sb.append(line + "\r\n");
 						}
 
 						while (readingCounter < lengthToRead) {
 							readResult = rd.read();
-							if (readResult == -1){
+							if (readResult == -1) {
 								break;
 							} else {
-								sb.append(Character
-										.toString((char) readResult));
+								sb.append(Character.toString((char) readResult));
 								readingCounter++;
 							}
-							if(isChunked && readingCounter == lengthToRead){
+							if (isChunked && readingCounter == lengthToRead) {
 								readingCounter = 0;
 								rd.read(); // '\r'
 								rd.read(); // '\n'
 								line = rd.readLine();
-								System.out.println("LOOP CHUNKED COUNTER UPDATE " + line);
+								System.out
+										.println("LOOP CHUNKED COUNTER UPDATE "
+												+ line);
 								lengthToRead = Integer.parseInt(line, 16);
-								sb.append( "\r\n" + line + "\r\n");
+								totalChunk+=lengthToRead;
+								sb.append("\r\n" + line + "\r\n");
 							}
 						}
-						System.out.println("this is sb " +sb.toString() + " sb length is " + sb.toString().length());
+						System.out.println("this is sb " + sb.toString()
+								+ " sb length is " + sb.toString().length());
 						System.out.println("after sb");
-						urlSrcToAnalyze = headersToAnalyze + "\r\n" + sb.toString();
+						urlSrcToAnalyze = headersToAnalyze + "\r\n"
+								+ sb.toString();
 						socket.close();
 						System.out.println(Thread.currentThread().getName()
 								+ " " + new Date() + " Enqueue Analyzer1");
 						HTMLtoAnalyze.enqueue(new AnalyzerQueueObject(result,
 								domainHost, crawlPort, urlSrcToAnalyze,
-								new Date()));
+								new Date(), totalChunk));
 					} catch (SocketTimeoutException e) {
 						System.out.println(Thread.currentThread().getName()
 								+ " " + "Socket time out! (Expected:)");
@@ -281,7 +293,7 @@ public class Downloader implements Runnable {
 								+ " " + new Date() + " Enqueue Analyzer2");
 						HTMLtoAnalyze.enqueue(new AnalyzerQueueObject(result,
 								domainHost, crawlPort, urlSrcToAnalyze,
-								new Date()));
+								new Date(),  totalChunk));
 					} catch (SocketException e) {
 						System.out.println(Thread.currentThread().getName()
 								+ " " + "Socket Exception");
@@ -316,7 +328,6 @@ public class Downloader implements Runnable {
 		return path.equalsIgnoreCase("html") || path.equalsIgnoreCase("htm")
 				|| path.equals("");
 	}
-
 
 	/***
 	 * Checks if requested URI is an image

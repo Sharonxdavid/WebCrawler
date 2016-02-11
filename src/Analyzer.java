@@ -53,6 +53,9 @@ public class Analyzer implements Runnable {
 				System.out.println(Thread.currentThread().getName()
 						+ "Request content-length: " + currData.ContentLength
 						+ " URL " + currData.url);
+				System.out.println(Thread.currentThread().getName()
+						+ "Request CHUNKED: " + currData.totalChunk
+						+ " URL " + currData.url);
 
 				// if(!domainMap.containsKey(currData.host)){
 				// domainMap.put(currData.host, new Statistics());
@@ -77,7 +80,8 @@ public class Analyzer implements Runnable {
 					if (isImg(currData.url)) {
 						System.out.println("IMG CONTENT LENGTH IS "
 								+ currData.ContentLength);
-						domainMap.get(currData.host).addToKey("Total img size",
+						domainMap.get(c1object.initialDomain).addToKey(
+								"Total img size",
 								String.valueOf(currData.ContentLength));
 
 					}
@@ -85,29 +89,40 @@ public class Analyzer implements Runnable {
 					else if (isVideo(currData.url)) {
 						System.out.println("VIDEO CONTENT LENGTH IS "
 								+ currData.ContentLength);
-						domainMap.get(currData.host).addToKey(
+						domainMap.get(c1object.initialDomain).addToKey(
 								"Total video size",
 								String.valueOf(currData.ContentLength));
+						domainMap.get(c1object.initialDomain).addToKey(
+								"# of videos",
+								String.valueOf("1"));
 					}
 					// if doc
 					else if (isDoc(currData.url)) {
 						System.out.println("DOC CONTENT LENGTH IS "
 								+ currData.ContentLength);
-						domainMap.get(currData.host).addToKey(
+						domainMap.get(c1object.initialDomain).addToKey(
 								"Total documents size",
 								String.valueOf(currData.ContentLength));
+						domainMap.get(c1object.initialDomain).addToKey(
+								"# of docs",
+								String.valueOf("1"));
 					} else { // html page
 
 						System.out.println("PAGE CONTENT LENGTH IS "
 								+ currData.ContentLength);
-						domainMap.get(currData.host).addToKey("Total url size",
-								String.valueOf(currData.ContentLength));
+						if (currData.isChunked) {
+							domainMap.get(c1object.initialDomain).addToKey(
+									"Total url size",
+									String.valueOf(currData.totalChunk));
+						} else {
+							domainMap.get(c1object.initialDomain).addToKey(
+									"Total url size",
+									String.valueOf(currData.ContentLength));
+						}
 						currPageBody = currData.httpResponseAsString;
 
 						crawlHref(currPageBody, currData.host,
 								currData.crawlPort);
-						System.out.println(Thread.currentThread().getName()
-								+ " " + "# of urls " + urlCounter);
 						crawlImgs(currPageBody, currData.host, currData.url,
 								currData.crawlPort);
 					}
@@ -219,7 +234,7 @@ public class Analyzer implements Runnable {
 				if (respectRobots) {
 					int disallowLength = isDisallowed(nextUrl);
 					if (disallowLength > 0) {
-						
+
 						int allowLength = isAllowed(nextUrl);
 						if (allowLength > disallowLength) {
 							// The link is allowed.
@@ -248,7 +263,7 @@ public class Analyzer implements Runnable {
 		}
 		return maxLength;
 	}
-	
+
 	private int isAllowed(String nextUrl) {
 		int maxLength = 0;
 		for (RobotRule r : c1object.allow) {
@@ -259,7 +274,7 @@ public class Analyzer implements Runnable {
 		}
 		return maxLength;
 	}
-	
+
 	private void crawlImgs(String currPage, String host, String url,
 			int crawlPort) {
 		imgCounter = 0;
@@ -318,7 +333,7 @@ public class Analyzer implements Runnable {
 				if (respectRobots) {
 					int disallowLength = isDisallowed(nextImg);
 					if (disallowLength > 0) {
-						
+
 						int allowLength = isAllowed(nextImg);
 						if (allowLength > disallowLength) {
 							// The link is allowed.

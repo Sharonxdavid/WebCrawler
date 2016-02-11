@@ -17,17 +17,19 @@ public class AnalyzerQueueObject {
 	String UserAgent;
 	String ContentType;
 	int crawlPort;
+	int totalChunk;
 
 	private static String[] supportedHTTPVersions = { "1.0", "1.1" };
 
 	public AnalyzerQueueObject(String url, String host, int crawlPort,
-			String body, Date date) throws HttpRequestException {
+			String body, Date date, int totalChunk) throws HttpRequestException {
 		this.httpResponseAsString = body;
 		this.url = url;
 		this.host = host;
 		this.downloadDate = date;
 		parseStatus(body);
 		this.crawlPort = crawlPort;
+		this.totalChunk = totalChunk;
 	}
 
 	private void parseStatus(String reqAsString) throws HttpRequestException {
@@ -72,9 +74,9 @@ public class AnalyzerQueueObject {
 			} else if (key.equalsIgnoreCase("referer")) {
 				if (headerArgs.length == 2)
 					this.Referer = value;
-			} else if (key.equalsIgnoreCase("chunked")) {
+			} else if (key.equalsIgnoreCase("Transfer-Encoding")) {
 				if (headerArgs.length == 2 && value != null)
-					this.isChunked = (value.toLowerCase().contains("yes"));
+					this.isChunked = (value.toLowerCase().contains("chunked"));
 			} else if (key.equalsIgnoreCase("content-type")) {
 				this.ContentType = value;
 			}

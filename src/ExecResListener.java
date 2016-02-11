@@ -52,7 +52,7 @@ public class ExecResListener implements Runnable {
 			System.out.println("The Domain here is: "
 					+ this.stats.map.get("Domain Name"));
 			createPageStats(this.stats.map, host);
-			createOldResultsPage();
+//			createOldResultsPage();
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -79,6 +79,32 @@ public class ExecResListener implements Runnable {
 		System.out.println("DOMAIN IN STATS IS: " + domain);
 		System.out.println("---STATS PARAMS--- " + params);
 		
+		String connectedDomain="";
+		int connectedCounter = 0;
+		for (String url : this.stats.externalLink) {
+			if(domainMap.containsKey(url)){
+				connectedDomain = connectedDomain + url + "\r\n";
+				connectedCounter++;
+			}
+		}
+		params.put("Connected Domain", connectedDomain);
+		params.put("# of connected domain", Integer.toString(connectedCounter));
+		
+		if(!params.containsKey("# of videos")){
+			params.put("# of videos", "0");
+		}
+		if(!params.containsKey("# of docs")){
+			params.put("# of docs", "0");
+		}
+		if(!params.containsKey("Total video size")){
+			params.put("Total video size", "0");
+		}
+		if(!params.containsKey("Total documents size")){
+			params.put("Total documents size", "0");
+		}
+		if(!params.containsKey("Total img size")){
+			params.put("Total img size", "0");
+		}
 		String avgRtt = calcAvgRtt(this.stats.rtt);
 		params.put("AVG rtt", avgRtt);
 		
@@ -91,6 +117,7 @@ public class ExecResListener implements Runnable {
 		
 		File file = new File(c1object.rootPath + fileNameFormat(domain)
 				+ ".html");
+//		File file = new File(fileNameFormat(domain) + ".html");
 		BufferedWriter bw = new BufferedWriter(new FileWriter(file));
 
 		bw.write("<!DOCTYPE html>");
@@ -119,8 +146,7 @@ public class ExecResListener implements Runnable {
 
 		bw.write("</table>");
 		bw.write("</div>");
-		bw.write("<a href='/index.html' class=\"link\">Back to index</a><br>");
-		bw.write("<a href='/form.html' class=\"link\">Back to form</a>");
+		bw.write("<a href='/oldStats.html' class=\"link\">Back to index</a><br>");
 		bw.write("</body>");
 		bw.write("</html>");
 		bw.close();
@@ -128,7 +154,8 @@ public class ExecResListener implements Runnable {
 	}
 
 	private void createOldResultsPage() throws IOException {
-		File file = new File(c1object.rootPath + "old results" + ".html");
+//		File file = new File(c1object.rootPath + "old results" + ".html");
+		File file = new File("oldStats.html");
 		BufferedWriter bw = new BufferedWriter(new FileWriter(file));
 
 		bw.write("<!DOCTYPE html>");
@@ -149,7 +176,10 @@ public class ExecResListener implements Runnable {
 			bw.write("<tr> <td>");
 			bw.write(entry.getKey());
 			bw.write("</td> <td>");
-			bw.write("<a href = " + "\"" + c1object.rootPath + entry.getKey()
+//			bw.write("<a href = " + "\"" + c1object.rootPath + entry.getKey()
+//					+ "_" + c1object.startCrawlDateTime
+//					+ ".html\">Link to page");
+			bw.write("<a href = " + "\"/"  + entry.getKey()
 					+ "_" + c1object.startCrawlDateTime
 					+ ".html\">Link to page");
 			bw.write("</td> </tr>");
