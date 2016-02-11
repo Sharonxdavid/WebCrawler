@@ -44,7 +44,8 @@ public class Analyzer implements Runnable {
 			System.out.println(Thread.currentThread().getName() + " "
 					+ "Before increment Analyzer");
 			c1object.increment();
-			if (domainMap.get(c1object.initialDomain).visited.contains(currData.url)) {
+			if (domainMap.get(c1object.initialDomain).visited
+					.contains(currData.url)) {
 				c1object.decrement();
 				continue;
 			} else {
@@ -64,12 +65,12 @@ public class Analyzer implements Runnable {
 						c1object.decrement();
 						// this is external link
 						System.out.println("EXTERNAL LINK" + currData.url);
-						domainMap.get(c1object.initialDomain).externalLink.add(currData.url);
+						domainMap.get(c1object.initialDomain).externalLink
+								.add(currData.url);
 						domainMap.get(c1object.initialDomain).addToKey(
 								"# of external links ", "1");
 						continue;
-					}
-					else{
+					} else {
 						domainMap.get(c1object.initialDomain).addToKey(
 								"# of internal links ", "1");
 					}
@@ -97,20 +98,19 @@ public class Analyzer implements Runnable {
 								"Total documents size",
 								String.valueOf(currData.ContentLength));
 					} else { // html page
-							
-							System.out.println("PAGE CONTENT LENGTH IS "
-									+ currData.ContentLength);
-							domainMap.get(currData.host).addToKey(
-									"Total url size",
-									String.valueOf(currData.ContentLength));
-							currPageBody = currData.httpResponseAsString;
 
-							crawlHref(currPageBody, currData.host,
-									currData.crawlPort);
-							System.out.println(Thread.currentThread().getName()
-									+ " " + "# of urls " + urlCounter);
-							crawlImgs(currPageBody, currData.host,
-									currData.url, currData.crawlPort);
+						System.out.println("PAGE CONTENT LENGTH IS "
+								+ currData.ContentLength);
+						domainMap.get(currData.host).addToKey("Total url size",
+								String.valueOf(currData.ContentLength));
+						currPageBody = currData.httpResponseAsString;
+
+						crawlHref(currPageBody, currData.host,
+								currData.crawlPort);
+						System.out.println(Thread.currentThread().getName()
+								+ " " + "# of urls " + urlCounter);
+						crawlImgs(currPageBody, currData.host, currData.url,
+								currData.crawlPort);
 					}
 
 					System.out.println(Thread.currentThread().getName() + " "
@@ -155,8 +155,9 @@ public class Analyzer implements Runnable {
 
 	private void crawlHref(String currPage, String host, int crawlPort) {
 		Pattern p = Pattern.compile("<a href=\"(.*?)\">");
-//		 Pattern p = Pattern.compile("<a.+?href=\"(.*?)\">");
+		// Pattern p = Pattern.compile("<a.+?href=\"(.*?)\">");
 		Matcher m = p.matcher(currPage);
+		boolean respectRobots = c1object.respectRobots;
 		System.out.println("**Matcher loop**");
 		String nextUrl;
 		urlCounter = 0;
@@ -168,13 +169,13 @@ public class Analyzer implements Runnable {
 			System.out.println("Group 0 is " + m.group(0));
 			System.out.println(m.group(1));
 			urlCounter++;
-			if(m.group(1).startsWith("https")){
+			if (m.group(1).startsWith("https")) {
 				System.out.println("IS HTTPS");
 				System.out.println("IS HTTPS");
 				System.out.println("IS HTTPS");
 				System.out.println("IS HTTPS");
 				System.out.println("IS HTTPS");
-				
+
 				continue;
 			}
 			if (m.group(1).startsWith("http://")) {
@@ -216,7 +217,19 @@ public class Analyzer implements Runnable {
 			}
 			System.out.println("NEXT URL IS " + nextUrl);
 			if (!domainMap.get(host).visited.contains(nextUrl)) {
-				URLtoDownload.enqueue(nextUrl);
+				if (respectRobots) {
+					if (c1object.disallow.contains(nextUrl)) {
+						continue;
+					} else if (c1object.allow.contains(nextUrl)) {
+						URLtoDownload.enqueue(nextUrl);
+					}
+					else{
+						URLtoDownload.enqueue(nextUrl);
+					}
+				} else {
+					URLtoDownload.enqueue(nextUrl);
+				}
+
 			}
 		}
 		domainMap.get(host).addToKey("# of urls", String.valueOf(urlCounter));
@@ -229,12 +242,13 @@ public class Analyzer implements Runnable {
 		Matcher m = p.matcher(currPage);
 		System.out.println("**Matcher loop**");
 		String nextImg;
+		boolean respectRobots = c1object.respectRobots;
 		while (m.find()) {
 			System.out.println("GROUP 0" + m.group(0));
 			System.out.println("IMG GROUP 1" + m.group(1) + " URL " + url + " "
 					+ domainMap.get(host).map.get("# of imgs"));
 			imgCounter++;
-			if(m.group(1).startsWith("https")){
+			if (m.group(1).startsWith("https")) {
 				continue;
 			}
 			if (m.group(1).startsWith("http://")) {
@@ -275,36 +289,25 @@ public class Analyzer implements Runnable {
 				}
 			}
 			System.out.println("NEXT URL IS " + nextImg);
-			if (!domainMap.get(host).visited.contains(nextImg))
-				URLtoDownload.enqueue(nextImg);
+			if (!domainMap.get(host).visited.contains(nextImg)) {
+				if (respectRobots) {
+					if (c1object.disallow.contains(nextImg)) {
+						continue;
+					} else if (c1object.allow.contains(nextImg)) {
+						URLtoDownload.enqueue(nextImg);
+					}
+					else{
+						URLtoDownload.enqueue(nextImg);
+					}
+				} else {
+					URLtoDownload.enqueue(nextImg);
+				}
+			}
+
 		}
 		domainMap.get(host).addToKey("# of imgs", String.valueOf(imgCounter));
 	}
 
-	public static class HttpHeadRequest {
-		public String requestHeaders;
-		public HashMap<String, String> headerParams;
-		public static HttpMethods methodType = HttpMethods.HEAD;
-		public static String httpVersion = "HTTP/1.1";
-		public String UserAgent = "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/47.0.2526.111 Safari/537.36";
-		public static String CRLF = "\r\n";
-		public static String domainHost;
 
-		public HttpHeadRequest(String host) {
-			this.domainHost = host;
-		}
-
-		public static String generateHeadRequestAsString(HttpHeadRequest req,
-				String path) {
-			String res;
-			if (path.equals(""))
-				res = methodType + " " + "/" + " " + httpVersion + CRLF;
-			else
-				res = methodType + " " + path + " " + httpVersion + CRLF;
-			res = res + "Host: " + req.domainHost + " " + CRLF;
-			res = res + CRLF;
-			return res;
-		}
-	}
 
 }

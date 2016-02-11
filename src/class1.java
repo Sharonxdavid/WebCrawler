@@ -17,6 +17,10 @@ public class class1 {
 	String rootPath;
 	String startCrawlDateTime;
 	
+	ArrayList<String> allow = new ArrayList<>();
+	ArrayList<String> disallow = new ArrayList<>();
+	boolean respectRobots;
+	
 	ArrayList<Integer> portScanRes = new ArrayList<>();
 
 	public synchronized void increment() {
